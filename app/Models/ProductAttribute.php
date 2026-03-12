@@ -2,32 +2,37 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductAttribute extends Model
 {
-    use HasFactory, SoftDeletes;
+    use SoftDeletes;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'name_ar',
+        'name_en',
+        'slug',
+        'input_type',
+        'options',
+        'validation_rules',
+        'is_active',
+        'sort_order',
+    ];
 
     protected $casts = [
         'options' => 'array',
         'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
-    public function getNameAttribute(): string
+    public function getDisplayNameAttribute(): string
     {
-        return app()->getLocale() === 'ar'
-            ? ($this->name_ar ?: $this->name_en)
-            : ($this->name_en ?: $this->name_ar);
+        return $this->name_ar ?: ($this->name_en ?? '');
     }
 
-    public function categories()
+    public function scopeActive($query)
     {
-        return $this->belongsToMany(Category::class, 'category_product_attribute')
-            ->withPivot('is_required', 'sort_order')
-            ->withTimestamps();
+        return $query->where('is_active', true);
     }
 }

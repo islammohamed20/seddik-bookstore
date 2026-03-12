@@ -7,6 +7,16 @@
     
     <div class="container mx-auto px-4 relative z-10">
         <!-- Section Header -->
+        @php
+            use App\Models\Setting;
+            $siteAddress = Setting::getValue('site_address', 'شارع الجمهورية، بجوار الوطنية مول، أسيوط، مصر');
+            $sitePhone = Setting::getValue('site_phone', '01223694848');
+            $siteAltPhone = Setting::getValue('site_phone_alt', '01022221892');
+            $whatsappNumber = Setting::getValue('whatsapp_number', '201223694848');
+            $whatsappUrl = 'https://wa.me/'.$whatsappNumber;
+            $mapExternalUrl = Setting::getValue('google_maps_url', 'https://www.google.com/maps/place/%D9%85%D9%83%D8%AA%D8%A8%D8%A9+%D8%A7%D9%84%D8%B5%D8%AF%D9%8A%D9%82%E2%80%AD/@27.1831474,31.1803477,246m/data=!3m1!1e3!4m6!3m5!1s0x14450b3115db4073:0x7d8035da02779e18!8m2!3d27.1831605!4d31.1801331!16s%2Fg%2F11h7ks27cr?entry=ttu');
+            $mapEmbedUrl = 'https://maps.google.com/maps?q=27.1831605,31.1801331&hl=ar&z=18&output=embed';
+        @endphp
         <div class="text-center mb-12">
             <span class="inline-block bg-primary-blue/10 text-primary-blue px-4 py-2 rounded-full text-sm font-semibold mb-4">
                 <i class="fas fa-map-marker-alt ml-1"></i>
@@ -20,7 +30,7 @@
             <!-- Map -->
             <div class="rounded-2xl overflow-hidden shadow-2xl h-full min-h-[400px] relative group">
                 <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3001.6!2d31.2!3d27.1" 
+                    src="{{ $mapEmbedUrl }}"
                     width="100%" 
                     height="100%" 
                     style="border:0; min-height: 400px;" 
@@ -30,7 +40,7 @@
                 </iframe>
                 <!-- Map Overlay on Hover -->
                 <div class="absolute inset-0 bg-primary-blue/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <a href="https://maps.google.com/?q=27.1,31.2" target="_blank" 
+                    <a href="{{ $mapExternalUrl }}" target="_blank" 
                        class="bg-white text-primary-blue px-6 py-3 rounded-full font-semibold shadow-lg hover:bg-primary-blue hover:text-white transition flex items-center">
                         <i class="fas fa-external-link-alt ml-2"></i>
                         فتح في خرائط جوجل
@@ -48,7 +58,7 @@
                         </div>
                         <div class="flex-1">
                             <h3 class="font-bold text-lg text-primary-blue mb-2">العنوان</h3>
-                            <p class="text-gray-600 leading-relaxed">شارع الجمهورية، بجوار الوطنية مول، أسيوط، مصر</p>
+                            <p class="text-gray-600 leading-relaxed">{{ $siteAddress }}</p>
                         </div>
                     </div>
                 </div>
@@ -62,14 +72,16 @@
                         <div class="flex-1">
                             <h3 class="font-bold text-lg text-primary-blue mb-2">اتصل بنا</h3>
                             <div class="space-y-2">
-                                <a href="tel:01223694848" class="flex items-center text-gray-600 hover:text-primary-blue transition">
+                                <a href="tel:{{ $sitePhone }}" class="flex items-center text-gray-600 hover:text-primary-blue transition">
                                     <i class="fas fa-phone text-sm ml-2 text-green-500"></i>
-                                    01223694848
+                                    {{ $sitePhone }}
                                 </a>
-                                <a href="tel:01022221892" class="flex items-center text-gray-600 hover:text-primary-blue transition">
-                                    <i class="fas fa-phone text-sm ml-2 text-green-500"></i>
-                                    01022221892
-                                </a>
+                                @if($siteAltPhone)
+                                    <a href="tel:{{ $siteAltPhone }}" class="flex items-center text-gray-600 hover:text-primary-blue transition">
+                                        <i class="fas fa-phone text-sm ml-2 text-green-500"></i>
+                                        {{ $siteAltPhone }}
+                                    </a>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -99,7 +111,7 @@
                 
                 <!-- CTA Buttons -->
                 <div class="grid grid-cols-2 gap-4 pt-2">
-                    <a href="https://wa.me/201223694848" 
+                    <a href="{{ $whatsappUrl }}" 
                        class="flex items-center justify-center gap-2 py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                         <i class="fab fa-whatsapp text-xl"></i>
                         واتساب

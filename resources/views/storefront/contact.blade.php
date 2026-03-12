@@ -21,7 +21,7 @@
             </ol>
         </nav>
         
-        <div class="text-center">
+        <div class="text-right">
             <span class="inline-block bg-primary-yellow text-primary-blue px-4 py-2 rounded-full text-sm font-bold mb-4">
                 <i class="fas fa-headset ml-1"></i>
                 نحن هنا لمساعدتك
@@ -232,28 +232,46 @@
                     </div>
                 </div>
                 
-                <!-- Social Media -->
-                <div class="bg-gradient-to-br from-primary-blue to-blue-900 rounded-2xl shadow-xl p-8 text-white">
-                    <h2 class="text-xl font-bold mb-4">تابعنا على وسائل التواصل</h2>
-                    <p class="text-white/70 mb-6 text-sm">ابق على اطلاع بأحدث العروض والمنتجات</p>
-                    <div class="flex gap-3">
-                        <a href="#" class="w-12 h-12 bg-white/10 hover:bg-blue-600 text-white rounded-xl flex items-center justify-center transition transform hover:scale-110 backdrop-blur">
-                            <i class="fab fa-facebook-f text-xl"></i>
-                        </a>
-                        <a href="#" class="w-12 h-12 bg-white/10 hover:bg-gradient-to-br hover:from-purple-500 hover:to-pink-500 text-white rounded-xl flex items-center justify-center transition transform hover:scale-110 backdrop-blur">
-                            <i class="fab fa-instagram text-xl"></i>
-                        </a>
-                        <a href="#" class="w-12 h-12 bg-white/10 hover:bg-sky-500 text-white rounded-xl flex items-center justify-center transition transform hover:scale-110 backdrop-blur">
-                            <i class="fab fa-twitter text-xl"></i>
-                        </a>
-                        <a href="#" class="w-12 h-12 bg-white/10 hover:bg-red-600 text-white rounded-xl flex items-center justify-center transition transform hover:scale-110 backdrop-blur">
-                            <i class="fab fa-youtube text-xl"></i>
-                        </a>
-                        <a href="#" class="w-12 h-12 bg-white/10 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition transform hover:scale-110 backdrop-blur">
-                            <i class="fab fa-telegram text-xl"></i>
-                        </a>
+                @php
+                    $contactFacebookUrl = \App\Models\Setting::getValue('facebook_url');
+                    $contactInstagramUrl = \App\Models\Setting::getValue('instagram_url');
+                    $contactTwitterUrl = \App\Models\Setting::getValue('twitter_url');
+                    $contactYoutubeUrl = \App\Models\Setting::getValue('youtube_url');
+                    $contactTelegramUrl = \App\Models\Setting::getValue('telegram_url');
+                @endphp
+                @if($contactFacebookUrl || $contactInstagramUrl || $contactTwitterUrl || $contactYoutubeUrl || $contactTelegramUrl)
+                    <div class="bg-gradient-to-br from-primary-blue to-blue-900 rounded-2xl shadow-xl p-8 text-white">
+                        <h2 class="text-xl font-bold mb-4">تابعنا على وسائل التواصل</h2>
+                        <p class="text-white/70 mb-6 text-sm">ابق على اطلاع بأحدث العروض والمنتجات</p>
+                        <div class="flex gap-3">
+                            @if($contactFacebookUrl)
+                                <a href="{{ $contactFacebookUrl }}" target="_blank" class="w-12 h-12 bg-white/10 hover:bg-blue-600 text-white rounded-xl flex items-center justify-center transition transform hover:scale-110 backdrop-blur">
+                                    <i class="fab fa-facebook-f text-xl"></i>
+                                </a>
+                            @endif
+                            @if($contactInstagramUrl)
+                                <a href="{{ $contactInstagramUrl }}" target="_blank" class="w-12 h-12 bg-white/10 hover:bg-gradient-to-br hover:from-purple-500 hover:to-pink-500 text-white rounded-xl flex items-center justify-center transition transform hover:scale-110 backdrop-blur">
+                                    <i class="fab fa-instagram text-xl"></i>
+                                </a>
+                            @endif
+                            @if($contactTwitterUrl)
+                                <a href="{{ $contactTwitterUrl }}" target="_blank" class="w-12 h-12 bg-white/10 hover:bg-sky-500 text-white rounded-xl flex items-center justify-center transition transform hover:scale-110 backdrop-blur">
+                                    <i class="fab fa-twitter text-xl"></i>
+                                </a>
+                            @endif
+                            @if($contactYoutubeUrl)
+                                <a href="{{ $contactYoutubeUrl }}" target="_blank" class="w-12 h-12 bg-white/10 hover:bg-red-600 text-white rounded-xl flex items-center justify-center transition transform hover:scale-110 backdrop-blur">
+                                    <i class="fab fa-youtube text-xl"></i>
+                                </a>
+                            @endif
+                            @if($contactTelegramUrl)
+                                <a href="{{ $contactTelegramUrl }}" target="_blank" class="w-12 h-12 bg-white/10 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition transform hover:scale-110 backdrop-blur">
+                                    <i class="fab fa-telegram text-xl"></i>
+                                </a>
+                            @endif
+                        </div>
                     </div>
-                </div>
+                @endif
             </div>
         </div>
         
@@ -261,7 +279,7 @@
         <div class="mt-12">
             <div class="bg-white rounded-2xl shadow-xl p-2 overflow-hidden">
                 <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3001.6!2d31.2!3d27.1"
+                    src="https://maps.google.com/maps?q=27.1831605,31.1801331&hl=ar&z=18&output=embed"
                     width="100%" 
                     height="400" 
                     style="border:0; border-radius: 16px;" 
@@ -277,7 +295,7 @@
 <!-- FAQ Section -->
 <section class="py-16 bg-white">
     <div class="container mx-auto px-4">
-        <div class="text-center mb-12">
+        <div class="text-right mb-12">
             <span class="inline-block bg-primary-yellow/20 text-primary-yellow px-4 py-2 rounded-full text-sm font-bold mb-4">
                 <i class="fas fa-question-circle ml-1"></i>
                 الأسئلة الشائعة

@@ -47,13 +47,24 @@ class CategoryController extends Controller
             'description_en' => 'nullable|string',
             'parent_id' => 'nullable|exists:categories,id',
             'icon' => 'nullable|string|max:100',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'color_start' => ['nullable','string','max:9','regex:/^#?[0-9A-Fa-f]{6}$/'],
+            'color_end' => ['nullable','string','max:9','regex:/^#?[0-9A-Fa-f]{6}$/'],
+            'banner_desktop' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
+            'banner_mobile' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
         ]);
 
         $data = $validated;
+        // Normalize colors to #RRGGBB
+        foreach (['color_start','color_end'] as $c) {
+            if (!empty($data[$c])) {
+                $v = ltrim($data[$c], '#');
+                $data[$c] = '#'.$v;
+            }
+        }
+        $data['name_en'] = $data['name_en'] ?? $data['name_ar'];
         $data['slug'] = Str::slug($validated['name_ar']);
         $data['is_active'] = $request->boolean('is_active', true);
         $data['is_featured'] = $request->boolean('is_featured', false);
@@ -66,9 +77,12 @@ class CategoryController extends Controller
             $data['slug'] = $originalSlug.'-'.$counter++;
         }
 
-        // Handle image
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('categories', 'public');
+        // Handle banners
+        if ($request->hasFile('banner_desktop')) {
+            $data['banner_desktop'] = $request->file('banner_desktop')->store('categories/banners', 'public');
+        }
+        if ($request->hasFile('banner_mobile')) {
+            $data['banner_mobile'] = $request->file('banner_mobile')->store('categories/banners', 'public');
         }
 
         Category::create($data);
@@ -104,13 +118,24 @@ class CategoryController extends Controller
             'description_en' => 'nullable|string',
             'parent_id' => 'nullable|exists:categories,id|not_in:'.$category->id,
             'icon' => 'nullable|string|max:100',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'color_start' => ['nullable','string','max:9','regex:/^#?[0-9A-Fa-f]{6}$/'],
+            'color_end' => ['nullable','string','max:9','regex:/^#?[0-9A-Fa-f]{6}$/'],
+            'banner_desktop' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
+            'banner_mobile' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
         ]);
 
         $data = $validated;
+        // Normalize colors to #RRGGBB
+        foreach (['color_start','color_end'] as $c) {
+            if (!empty($data[$c])) {
+                $v = ltrim($data[$c], '#');
+                $data[$c] = '#'.$v;
+            }
+        }
+        $data['name_en'] = $data['name_en'] ?? $data['name_ar'];
         $data['is_featured'] = $request->boolean('is_featured', false);
 
         // Update slug if Arabic name changed
@@ -125,19 +150,24 @@ class CategoryController extends Controller
 
         $data['is_active'] = $request->boolean('is_active', true);
 
-        // Handle image
-        if ($request->hasFile('image')) {
-            // Delete old image
-            if ($category->image) {
-                Storage::disk('public')->delete($category->image);
+        // Handle banners
+        if ($request->hasFile('banner_desktop')) {
+            if ($category->banner_desktop) {
+                Storage::disk('public')->delete($category->banner_desktop);
             }
-            $data['image'] = $request->file('image')->store('categories', 'public');
+            $data['banner_desktop'] = $request->file('banner_desktop')->store('categories/banners', 'public');
+        }
+        if ($request->hasFile('banner_mobile')) {
+            if ($category->banner_mobile) {
+                Storage::disk('public')->delete($category->banner_mobile);
+            }
+            $data['banner_mobile'] = $request->file('banner_mobile')->store('categories/banners', 'public');
         }
 
         $category->update($data);
 
         return redirect()
-            ->route('admin.categories.index')
+            ->route('admin.categories.edit', $category)
             ->with('success', 'تم تحديث التصنيف بنجاح');
     }
 
@@ -153,9 +183,12 @@ class CategoryController extends Controller
             return back()->with('error', 'لا يمكن حذف التصنيف لأنه يحتوي على تصنيفات فرعية');
         }
 
-        // Delete image
-        if ($category->image) {
-            Storage::disk('public')->delete($category->image);
+        // Delete banners
+        if ($category->banner_desktop) {
+            Storage::disk('public')->delete($category->banner_desktop);
+        }
+        if ($category->banner_mobile) {
+            Storage::disk('public')->delete($category->banner_mobile);
         }
 
         $category->delete();
@@ -177,5 +210,23 @@ class CategoryController extends Controller
         $category->update(['is_featured' => ! $category->is_featured]);
 
         return back()->with('success', 'تم تحديث حالة التمييز');
+    }
+
+    public function deleteBanner(Category $category, $type)
+    {
+        if (!in_array($type, ['desktop', 'mobile'])) {
+            return back()->with('error', 'نوع الصورة غير صحيح');
+        }
+
+        $field = 'banner_' . $type;
+        
+        if ($category->$field) {
+            Storage::disk('public')->delete($category->$field);
+            $category->update([$field => null]);
+            
+            return back()->with('success', 'تم حذف صورة البانر بنجاح');
+        }
+
+        return back()->with('error', 'لا توجد صورة لحذفها');
     }
 }

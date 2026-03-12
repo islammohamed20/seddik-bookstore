@@ -66,7 +66,7 @@
         </div>
         <div class="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
             @forelse($categories as $category)
-                <a href="{{ route('products.index', ['category' => $category->slug]) }}" class="group rounded-xl bg-white shadow-sm px-3 py-4 flex flex-col items-center text-center hover:shadow-md transition-shadow">
+                <a href="{{ route('products.index', ['category' => $category->slug]) }}" class="group rounded-xl bg-white shadow-sm px-3 py-4 flex flex-col items-center text-right hover:shadow-md transition-shadow">
                     <div class="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mb-2">
                         <span class="text-sm font-semibold text-amber-700">
                             {{ mb_substr($category->name_ar ?? $category->name_en, 0, 2) }}

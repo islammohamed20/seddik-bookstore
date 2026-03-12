@@ -199,7 +199,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-12 text-center">
+                        <td colspan="8" class="px-6 py-12 text-right">
                             <div class="flex flex-col items-center">
                                 <i class="fas fa-inbox text-gray-300 dark:text-slate-600 text-5xl mb-4"></i>
                                 <p class="text-gray-500 dark:text-slate-400">لا يوجد مشتركين حالياً</p>

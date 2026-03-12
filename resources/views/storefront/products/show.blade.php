@@ -50,7 +50,6 @@
 @endsection
 
 @section('content')
-<!-- Breadcrumb -->
 <nav class="bg-gray-50 py-4">
     <div class="container mx-auto px-4">
         <ol class="flex items-center flex-wrap gap-2 text-sm">
@@ -67,19 +66,23 @@
     </div>
 </nav>
 
-<!-- Product Details -->
-<section class="py-12 bg-white">
+<section class="py-12 bg-white" x-data="productShow()">
     <div class="container mx-auto px-4">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-            <!-- Product Images -->
-            <div class="space-y-4" x-data="{ activeImage: 0 }">
-                <!-- Main Image -->
+            <div class="space-y-4">
                 <div class="relative rounded-2xl bg-gray-100 overflow-hidden shadow-lg group">
-                    <div class="aspect-square">
+                    <div class="aspect-[4/3]">
                         @if($product->images && $product->images->count() > 0)
+                        <img x-show="variantImageUrl" x-cloak
+                             :src="variantImageUrl"
+                             alt="{{ $product->name_ar }}"
+                             class="w-full h-full object-cover transition-opacity duration-300"
+                             x-transition:enter="transition ease-out duration-300"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100">
                         @foreach($product->images as $index => $image)
-                        <img x-show="activeImage === {{ $index }}" 
-                             src="{{ asset('storage/' . $image->path) }}" 
+                        <img x-show="!variantImageUrl && activeImage === {{ $index }}"
+                             src="{{ asset('storage/' . $image->path) }}"
                              alt="{{ $product->name_ar }}"
                              class="w-full h-full object-cover transition-opacity duration-300"
                              x-transition:enter="transition ease-out duration-300"
@@ -87,8 +90,12 @@
                              x-transition:enter-end="opacity-100">
                         @endforeach
                         @elseif($product->primary_image)
-                        <img src="{{ $product->primary_image->url }}" 
-                             alt="{{ $product->name_ar }}" 
+                        <img x-show="variantImageUrl" x-cloak
+                             :src="variantImageUrl"
+                             alt="{{ $product->name_ar }}"
+                             class="w-full h-full object-cover">
+                        <img src="{{ $product->primary_image->url }}"
+                             alt="{{ $product->name_ar }}"
                              class="w-full h-full object-cover">
                         @else
                         <div class="w-full h-full flex items-center justify-center">
@@ -96,8 +103,7 @@
                         </div>
                         @endif
                     </div>
-                    
-                    <!-- Badges -->
+
                     <div class="absolute top-4 right-4 flex flex-col gap-2">
                         @if($product->sale_price && $product->sale_price < $product->price)
                         <span class="px-3 py-1.5 rounded-full bg-primary-red text-white text-sm font-bold shadow-lg">
@@ -115,21 +121,28 @@
                         </span>
                         @endif
                     </div>
-                    
-                    <!-- Zoom Button -->
+
                     <button class="absolute bottom-4 left-4 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white">
                         <i class="fas fa-search-plus text-gray-700"></i>
                     </button>
                 </div>
-                
-                <!-- Thumbnails -->
+
+                @if($product->video_path)
+                <div class="mt-4">
+                    <video controls class="w-full rounded-2xl shadow-lg bg-black">
+                        <source src="{{ asset('storage/' . $product->video_path) }}" type="video/mp4">
+                        متصفحك لا يدعم تشغيل الفيديو.
+                    </video>
+                </div>
+                @endif
+
                 @if($product->images && $product->images->count() > 1)
                 <div class="flex gap-3 overflow-x-auto pb-2">
                     @foreach($product->images as $index => $image)
-                    <button @click="activeImage = {{ $index }}"
-                            :class="activeImage === {{ $index }} ? 'ring-2 ring-primary-blue' : 'ring-1 ring-gray-200'"
+                    <button @click="activeImage = {{ $index }}; variantImageUrl = null"
+                            :class="!variantImageUrl && activeImage === {{ $index }} ? 'ring-2 ring-primary-blue' : 'ring-1 ring-gray-200'"
                             class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden transition-all hover:ring-primary-blue">
-                        <img src="{{ asset('storage/' . $image->path) }}" 
+                        <img src="{{ asset('storage/' . $image->path) }}"
                              alt="صورة {{ $index + 1 }}"
                              class="w-full h-full object-cover">
                     </button>
@@ -137,13 +150,11 @@
                 </div>
                 @endif
             </div>
-            
-            <!-- Product Info -->
+
             <div class="space-y-6">
-                <!-- Category & Brand -->
                 <div class="flex items-center gap-3 flex-wrap">
                     @if($product->category)
-                    <a href="{{ route('products.category', $product->category->slug) }}" 
+                    <a href="{{ route('products.category', $product->category->slug) }}"
                        class="text-sm text-gray-500 hover:text-primary-blue transition">
                         <i class="fas fa-folder-open ml-1"></i>
                         {{ $product->category->name_ar }}
@@ -151,56 +162,46 @@
                     @endif
                     @if($product->brand)
                     <span class="text-gray-300">|</span>
-                    <a href="{{ route('products.brand', $product->brand->slug) }}" 
+                    <a href="{{ route('products.brand', $product->brand->slug) }}"
                        class="text-sm text-gray-500 hover:text-primary-blue transition">
                         <i class="fas fa-tag ml-1"></i>
                         {{ $product->brand->name_ar ?? $product->brand->name }}
                     </a>
                     @endif
                 </div>
-                
-                <!-- Title -->
+
+                @if($product->tagOptions && $product->tagOptions->count() > 0)
+                <div class="flex items-center gap-2 flex-wrap">
+                    @foreach($product->tagOptions as $tagOption)
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        <i class="fas fa-tag ml-1 text-indigo-400"></i>
+                        {{ $tagOption->name_ar ?? $tagOption->name_en }}
+                    </span>
+                    @endforeach
+                </div>
+                @endif
+
                 <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
                     {{ $product->name_ar ?? $product->name_en }}
                 </h1>
-                
-                <!-- Subtitle -->
+                <div class="text-sm text-gray-600 -mt-3" x-text="matchedVariant ? matchedVariant.label : ''"></div>
+                <div class="text-2xl font-extrabold text-primary-red -mt-2" x-text="formatPrice(matchedVariant ? matchedVariant.price : basePrice)"></div>
+
                 @if($product->subtitle_ar || $product->subtitle_en)
                 <p class="text-gray-600 text-lg">
                     {{ $product->subtitle_ar ?? $product->subtitle_en }}
                 </p>
                 @endif
-                
-                <!-- Rating -->
+
                 <div class="flex items-center gap-3">
                     <div class="flex items-center">
                         @for($i = 1; $i <= 5; $i++)
-                        <i class="fas fa-star {{ $i <= 4 ? 'text-yellow-400' : 'text-gray-300' }}"></i>
+                        <i class="fas fa-star {{ $i <= floor($product->average_rating) ? 'text-yellow-400' : 'text-gray-300' }}"></i>
                         @endfor
                     </div>
-                    <span class="text-gray-500 text-sm">({{ rand(15, 150) }} تقييم)</span>
+                    <span class="text-gray-500 text-sm">({{ $product->reviews_count }} تقييم)</span>
                 </div>
-                
-                <!-- Price -->
-                <div class="bg-gray-50 rounded-2xl p-6">
-                    @php $price = $product->final_price; @endphp
-                    <div class="flex items-baseline gap-3 flex-wrap">
-                        <span class="text-3xl font-bold text-primary-red">
-                            {{ number_format($price, 2) }} ج.م
-                        </span>
-                        @if($product->sale_price && $product->sale_price < $product->price)
-                        <span class="text-lg text-gray-400 line-through">
-                            {{ number_format($product->price, 2) }} ج.م
-                        </span>
-                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                            وفر {{ number_format($product->price - $price, 2) }} ج.م
-                        </span>
-                        @endif
-                    </div>
-                    <p class="text-sm text-gray-500 mt-2">شامل جميع الضرائب</p>
-                </div>
-                
-                <!-- Stock Status -->
+
                 <div class="flex items-center gap-4 flex-wrap">
                     @if($product->stock_status === 'out_of_stock' || (!$product->is_available ?? false))
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-100 text-red-700 font-medium">
@@ -218,7 +219,7 @@
                         متوفر في المخزون
                     </span>
                     @endif
-                    
+
                     @if($product->sku)
                     <span class="text-sm text-gray-500">
                         <i class="fas fa-barcode ml-1"></i>
@@ -226,51 +227,67 @@
                     </span>
                     @endif
                 </div>
-                
-                <!-- Description -->
+
                 @if($product->short_description_ar || $product->short_description_en)
                 <div class="prose prose-sm text-gray-600">
                     <p>{{ $product->short_description_ar ?? $product->short_description_en }}</p>
                 </div>
                 @endif
-                
-                <!-- Add to Cart -->
+
+                @if($product->product_type === 'variable' && $product->variants->count() > 0)
+                <div class="bg-gray-50 rounded-2xl p-5 space-y-4">
+                    <div class="flex flex-wrap gap-3">
+                        @foreach($product->variants as $variant)
+                        <button type="button"
+                                @click="selectVariant({{ $variant->id }})"
+                                :class="matchedVariant && matchedVariant.id === {{ $variant->id }}
+                                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-200'
+                                    : 'border-gray-300 text-gray-700 hover:border-gray-400'"
+                                class="px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all">
+                            {{ $variant->label ?: ('متغير ' . ($loop->index + 1)) }}
+                        </button>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
                 @if($product->is_available ?? true)
-                <form method="post" action="{{ route('cart.store', $product) }}" class="space-y-4" x-data>
+                <form method="post" action="{{ route('cart.store', $product) }}" class="space-y-4">
                     @csrf
-                    <div class="flex items-center gap-4">
-                        <!-- Quantity -->
-                        <div class="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden" x-data="{ qty: 1 }">
-                            <button type="button" @click="qty = Math.max(1, qty - 1)" 
-                                    class="w-12 h-12 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition">
-                                <i class="fas fa-minus"></i>
+                    @if($product->product_type === 'variable' && $product->variants->count() > 0)
+                    <input type="hidden" name="variant_id" :value="matchedVariant ? matchedVariant.id : ''">
+                    @endif
+                    
+                    <div class="flex items-center gap-2 sm:gap-3" x-data="{ qty: 1 }">
+                        <div class="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
+                            <button type="button" @click="qty = Math.max(1, qty - 1)"
+                                    class="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition">
+                                <i class="fas fa-minus text-sm"></i>
                             </button>
                             <input type="number" name="quantity" x-model="qty" min="1" max="100"
-                                   class="w-16 h-12 text-center border-0 focus:ring-0 font-semibold text-lg">
+                                   class="w-12 sm:w-16 h-10 sm:h-12 text-center border-0 focus:ring-0 font-semibold text-base sm:text-lg">
                             <button type="button" @click="qty = Math.min(100, qty + 1)"
-                                    class="w-12 h-12 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition">
-                                <i class="fas fa-plus"></i>
+                                    class="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition">
+                                <i class="fas fa-plus text-sm"></i>
                             </button>
                         </div>
-                        
-                        <!-- Add to Cart Button -->
-                        <button type="submit" 
-                                class="flex-1 h-12 bg-primary-blue text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-primary-blue/90 transition transform hover:scale-[1.02] shadow-lg">
-                            <i class="fas fa-shopping-cart"></i>
-                            أضف للسلة
+
+                        <button type="submit"
+                            class="w-32 sm:w-48 h-10 sm:h-12 bg-primary-blue text-white font-bold rounded-xl flex items-center justify-center gap-1 sm:gap-2 hover:bg-primary-blue/90 transition transform hover:scale-[1.02] shadow-lg text-sm sm:text-base">
+                            <i class="fas fa-shopping-cart text-sm sm:text-base"></i>
+                            <span class="hidden sm:inline">أضف للسلة</span>
+                            <span class="sm:hidden">السلة</span>
                         </button>
-                    </div>
-                    
-                    <!-- Secondary Actions -->
-                    <div class="flex gap-3">
+
                         <button type="button"
-                                class="flex-1 h-12 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl flex items-center justify-center gap-2 hover:border-pink-500 hover:text-pink-500 transition">
-                            <i class="far fa-heart"></i>
-                            أضف للمفضلة
+                                class="h-10 sm:h-12 px-3 sm:px-4 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl flex items-center justify-center gap-1 sm:gap-2 hover:border-pink-500 hover:text-pink-500 transition text-sm sm:text-base">
+                            <i class="far fa-heart text-sm sm:text-base"></i>
+                            <span class="hidden sm:inline">المفضلة</span>
                         </button>
+
                         <button type="button" @click="shareProduct()"
-                                class="w-12 h-12 border-2 border-gray-200 text-gray-700 rounded-xl flex items-center justify-center hover:border-primary-blue hover:text-primary-blue transition">
-                            <i class="fas fa-share-alt"></i>
+                                class="w-10 h-10 sm:w-12 sm:h-12 border-2 border-gray-200 text-gray-700 rounded-xl flex items-center justify-center hover:border-primary-blue hover:text-primary-blue transition">
+                            <i class="fas fa-share-alt text-sm sm:text-base"></i>
                         </button>
                     </div>
                 </form>
@@ -283,104 +300,11 @@
                     </button>
                 </div>
                 @endif
-                
-                <!-- Trust Badges -->
-                <div class="grid grid-cols-3 gap-4 pt-4 border-t">
-                    <div class="text-center">
-                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <i class="fas fa-truck text-primary-blue"></i>
-                        </div>
-                        <p class="text-xs text-gray-600">شحن سريع</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <i class="fas fa-shield-check text-green-600"></i>
-                        </div>
-                        <p class="text-xs text-gray-600">ضمان الجودة</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <i class="fas fa-undo text-amber-600"></i>
-                        </div>
-                        <p class="text-xs text-gray-600">إرجاع سهل</p>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Product Description & Details Tabs -->
-@if($product->description_ar || $product->description_en || $product->specifications)
-<section class="py-12 bg-gray-50">
-    <div class="container mx-auto px-4">
-        <div x-data="{ activeTab: 'description' }" class="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <!-- Tabs Header -->
-            <div class="flex border-b">
-                <button @click="activeTab = 'description'"
-                        :class="activeTab === 'description' ? 'border-b-2 border-primary-blue text-primary-blue bg-blue-50' : 'text-gray-600'"
-                        class="flex-1 py-4 px-6 font-semibold transition">
-                    <i class="fas fa-file-alt ml-2"></i>
-                    الوصف
-                </button>
-                <button @click="activeTab = 'specs'"
-                        :class="activeTab === 'specs' ? 'border-b-2 border-primary-blue text-primary-blue bg-blue-50' : 'text-gray-600'"
-                        class="flex-1 py-4 px-6 font-semibold transition">
-                    <i class="fas fa-list-ul ml-2"></i>
-                    المواصفات
-                </button>
-                <button @click="activeTab = 'reviews'"
-                        :class="activeTab === 'reviews' ? 'border-b-2 border-primary-blue text-primary-blue bg-blue-50' : 'text-gray-600'"
-                        class="flex-1 py-4 px-6 font-semibold transition">
-                    <i class="fas fa-star ml-2"></i>
-                    التقييمات
-                </button>
-            </div>
-            
-            <!-- Tabs Content -->
-            <div class="p-6">
-                <!-- Description Tab -->
-                <div x-show="activeTab === 'description'" class="prose max-w-none">
-                    {!! $product->description_ar ?? $product->description_en ?? '<p class="text-gray-500">لا يوجد وصف متاح لهذا المنتج.</p>' !!}
-                </div>
-                
-                <!-- Specs Tab -->
-                <div x-show="activeTab === 'specs'" x-cloak>
-                    @if($product->specifications)
-                    <table class="w-full">
-                        <tbody class="divide-y">
-                            @foreach(json_decode($product->specifications, true) ?? [] as $key => $value)
-                            <tr>
-                                <td class="py-3 px-4 bg-gray-50 font-medium text-gray-700 w-1/3">{{ $key }}</td>
-                                <td class="py-3 px-4">{{ $value }}</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    @else
-                    <p class="text-gray-500 text-center py-8">لا توجد مواصفات متاحة.</p>
-                    @endif
-                </div>
-                
-                <!-- Reviews Tab -->
-                <div x-show="activeTab === 'reviews'" x-cloak>
-                    <div class="text-center py-8">
-                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-star text-2xl text-gray-400"></i>
-                        </div>
-                        <p class="text-gray-500 mb-4">لا توجد تقييمات حتى الآن</p>
-                        <button class="bg-primary-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-blue/90 transition">
-                            كن أول من يقيم هذا المنتج
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-@endif
-
-<!-- Related Products -->
 @if($related->isNotEmpty())
 <section class="py-12 bg-white">
     <div class="container mx-auto px-4">
@@ -394,18 +318,18 @@
                 <i class="fas fa-arrow-left mr-1"></i>
             </a>
         </div>
-        
+
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             @foreach($related as $item)
-            <a href="{{ route('products.show', $item) }}" 
+            <a href="{{ route('products.show', $item) }}"
                class="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-1">
                 <div class="relative aspect-square bg-gray-100 overflow-hidden">
                     @if($item->images && $item->images->first())
-                    <img src="{{ asset('storage/' . $item->images->first()->path) }}" 
+                    <img src="{{ asset('storage/' . $item->images->first()->path) }}"
                          alt="{{ $item->name_ar }}"
                          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                     @elseif($item->primary_image)
-                    <img src="{{ $item->primary_image->url }}" 
+                    <img src="{{ $item->primary_image->url }}"
                          alt="{{ $item->name_ar }}"
                          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                     @else
@@ -413,7 +337,7 @@
                         <i class="fas fa-image text-gray-300 text-4xl"></i>
                     </div>
                     @endif
-                    
+
                     @if($item->sale_price && $item->sale_price < $item->price)
                     <span class="absolute top-2 right-2 px-2 py-1 rounded-full bg-primary-red text-white text-xs font-bold">
                         -{{ $item->price > 0 ? number_format((($item->price - $item->sale_price) / $item->price) * 100) : 0 }}%
@@ -440,6 +364,150 @@
 </section>
 @endif
 
+<section class="py-12 bg-gray-50">
+    <div class="container mx-auto px-4">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-2">تقييمات العملاء</h2>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <div class="flex">
+                                    @for($i = 1; $i <= 5; $i++)
+                                    <i class="fas fa-star {{ $i <= floor($product->average_rating) ? 'text-yellow-400' : 'text-white/30' }}"></i>
+                                    @endfor
+                                </div>
+                                <span class="text-2xl font-bold">{{ number_format($product->average_rating, 1) }}</span>
+                            </div>
+                            <span class="text-white/80">({{ $product->reviews_count }} تقييم)</span>
+                        </div>
+                    </div>
+                    @if(auth()->check())
+                    <button onclick="showReviewForm()" class="bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition">
+                        <i class="fas fa-star ml-2"></i>إضافة تقييم
+                    </button>
+                    @else
+                    <button onclick="showLoginAlert()" class="bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition">
+                        <i class="fas fa-sign-in-alt ml-2"></i>سجل دخول لإضافة تقييم
+                    </button>
+                    @endif
+                </div>
+            </div>
+
+            <div class="p-6">
+                @if($product->approvedReviews()->count() > 0)
+                <div class="space-y-4">
+                    @foreach($product->approvedReviews()->with('user')->latest()->get() as $review)
+                    <div class="border-b pb-4 last:border-b-0">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-gray-500"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">{{ $review->user->name }}</h4>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <div class="flex">
+                                                @for($i = 1; $i <= 5; $i++)
+                                                <i class="fas fa-star {{ $i <= $review->rating ? 'text-yellow-400' : 'text-gray-300' }} text-sm"></i>
+                                                @endfor
+                                            </div>
+                                            <span class="text-xs text-gray-500">{{ $review->created_at->format('Y-m-d') }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                @if($review->comment)
+                                <p class="text-gray-700">{{ $review->comment }}</p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @else
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-star text-4xl mb-3"></i>
+                    <p>لا توجد تقييمات لهذا المنتج بعد</p>
+                    <p class="text-sm mt-1">كن أول من يقيم هذا المنتج!</p>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</section>
+
+@if(auth()->check())
+<div id="reviewModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-gray-900">إضافة تقييم</h3>
+            <button onclick="hideReviewForm()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form action="{{ route('products.review.store', $product) }}" method="POST" class="space-y-4">
+            @csrf
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">التقييم *</label>
+                <div class="flex gap-2" id="ratingStars">
+                    @for($i = 1; $i <= 5; $i++)
+                    <button type="button" onclick="setRating({{ $i }})" class="text-3xl text-gray-300 hover:text-yellow-400 transition">
+                        <i class="fas fa-star" data-rating="{{ $i }}"></i>
+                    </button>
+                    @endfor
+                </div>
+                <input type="hidden" name="rating" id="ratingInput" value="5" required>
+            </div>
+
+            <div>
+                <label for="comment" class="block text-sm font-medium text-gray-700 mb-2">التعليق (اختياري)</label>
+                <textarea name="comment" id="comment" rows="4" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="شاركنا رأيك في هذا المنتج..."></textarea>
+            </div>
+
+            <div class="flex gap-3">
+                <button type="submit" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition">
+                    إرسال التقييم
+                </button>
+                <button type="button" onclick="hideReviewForm()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition">
+                    إلغاء
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showReviewForm() {
+    document.getElementById('reviewModal').classList.remove('hidden');
+    document.getElementById('reviewModal').classList.add('flex');
+}
+
+function hideReviewForm() {
+    document.getElementById('reviewModal').classList.add('hidden');
+    document.getElementById('reviewModal').classList.remove('flex');
+}
+
+function setRating(rating) {
+    document.getElementById('ratingInput').value = rating;
+    const stars = document.querySelectorAll('#ratingStars i');
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.remove('text-gray-300');
+            star.classList.add('text-yellow-400');
+        } else {
+            star.classList.remove('text-yellow-400');
+            star.classList.add('text-gray-300');
+        }
+    });
+}
+
+setRating(5);
+</script>
+@endif
+
 <script>
 function shareProduct() {
     if (navigator.share) {
@@ -450,6 +518,65 @@ function shareProduct() {
     } else {
         navigator.clipboard.writeText(window.location.href);
         alert('تم نسخ رابط المنتج');
+    }
+}
+
+function showLoginAlert() {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white px-6 py-4 rounded-lg shadow-2xl z-50 flex items-center gap-3 animate-slide-down';
+    alertDiv.innerHTML = '<i class="fas fa-info-circle text-xl"></i><span class="font-semibold">يجب عليك تسجيل الدخول أولاً</span>';
+    
+    const style = document.createElement('style');
+    style.textContent = '@keyframes slide-down { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }';
+    document.head.appendChild(style);
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.style.transition = 'opacity 0.5s ease-out';
+        alertDiv.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(alertDiv);
+            document.head.removeChild(style);
+        }, 500);
+    }, 6000);
+}
+
+@php
+    $variantsJson = collect();
+    if ($product->product_type === 'variable' && $product->relationLoaded('variants')) {
+        $variantsJson = $product->variants->map(function ($v) {
+            return [
+                'id' => $v->id,
+                'label' => $v->label,
+                'sku' => $v->sku,
+                'price' => $v->final_price,
+                'image' => $v->image_url,
+            ];
+        })->values();
+    }
+@endphp
+
+function productShow() {
+    return {
+        activeImage: 0,
+        basePrice: @json((float) $product->final_price),
+        variants: @json($variantsJson),
+        selectedVariantId: null,
+        matchedVariant: null,
+        variantImageUrl: null,
+
+        formatPrice(price) {
+            const p = Number(price ?? 0);
+            if (Number.isNaN(p)) return '';
+            return p.toFixed(2) + ' ج.م';
+        },
+
+        selectVariant(variantId) {
+            this.selectedVariantId = this.selectedVariantId === variantId ? null : variantId;
+            this.matchedVariant = this.selectedVariantId ? this.variants.find(v => v.id === this.selectedVariantId) : null;
+            this.variantImageUrl = this.matchedVariant?.image || null;
+        }
     }
 }
 </script>

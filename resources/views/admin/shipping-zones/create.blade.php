@@ -5,7 +5,7 @@
 
 @section('content')
 <div class="max-w-4xl">
-    <form action="{{ route('admin.shipping-zones.store') }}" method="POST" class="space-y-6">
+    <form action="{{ route('admin.shipping-zones.store') }}" method="POST" class="space-y-6" id="main-form">
         @csrf
         
         <div class="bg-white rounded-lg shadow p-6">

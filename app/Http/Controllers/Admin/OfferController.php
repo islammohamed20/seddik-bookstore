@@ -49,6 +49,10 @@ class OfferController extends Controller
             'starts_at' => 'required|date',
             'ends_at' => 'required|date|after:starts_at',
             'is_active' => 'boolean',
+            'is_featured' => 'boolean',
+            'sort_order' => 'nullable|integer|min:0',
+            'banner_color_from' => ['nullable', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+            'banner_color_to' => ['nullable', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
             'products' => 'nullable|array',
             'products.*' => 'exists:products,id',
         ]);
@@ -80,6 +84,10 @@ class OfferController extends Controller
             'starts_at' => $validated['starts_at'],
             'ends_at' => $validated['ends_at'],
             'is_active' => $request->boolean('is_active', true),
+            'is_featured' => $request->boolean('is_featured', false),
+            'sort_order' => $validated['sort_order'] ?? 0,
+            'banner_color_from' => $validated['banner_color_from'] ?? null,
+            'banner_color_to' => $validated['banner_color_to'] ?? null,
         ];
 
         if ($request->hasFile('image')) {
@@ -124,6 +132,10 @@ class OfferController extends Controller
             'starts_at' => 'required|date',
             'ends_at' => 'required|date|after:starts_at',
             'is_active' => 'boolean',
+            'is_featured' => 'boolean',
+            'sort_order' => 'nullable|integer|min:0',
+            'banner_color_from' => ['nullable', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+            'banner_color_to' => ['nullable', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
             'products' => 'nullable|array',
             'products.*' => 'exists:products,id',
         ]);
@@ -147,6 +159,10 @@ class OfferController extends Controller
             'starts_at' => $validated['starts_at'],
             'ends_at' => $validated['ends_at'],
             'is_active' => $request->boolean('is_active', true),
+            'is_featured' => $request->boolean('is_featured', false),
+            'sort_order' => $validated['sort_order'] ?? 0,
+            'banner_color_from' => $validated['banner_color_from'] ?? null,
+            'banner_color_to' => $validated['banner_color_to'] ?? null,
         ];
 
         if ($request->hasFile('image')) {
@@ -162,7 +178,7 @@ class OfferController extends Controller
         $offer->products()->sync($validated['products'] ?? []);
 
         return redirect()
-            ->route('admin.offers.index')
+            ->route('admin.offers.edit', $offer)
             ->with('success', 'تم تحديث العرض بنجاح');
     }
 

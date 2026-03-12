@@ -14,14 +14,18 @@ class PageController extends Controller
         $query = Page::query();
 
         if ($request->filled('search')) {
-            $query->where('title', 'like', "%{$request->search}%");
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title_ar', 'like', "%{$search}%")
+                    ->orWhere('title_en', 'like', "%{$search}%");
+            });
         }
 
         if ($request->filled('is_published')) {
             $query->where('is_published', $request->is_published);
         }
 
-        $pages = $query->orderBy('title')->paginate(15)->withQueryString();
+        $pages = $query->orderBy('title_ar')->paginate(15)->withQueryString();
 
         return view('admin.pages.index', compact('pages'));
     }
@@ -41,17 +45,29 @@ class PageController extends Controller
             'is_published' => 'boolean',
         ]);
 
-        $validated['slug'] = Str::slug($validated['title']);
-        $validated['is_published'] = $request->boolean('is_published', true);
+        $slug = Str::slug($validated['title']);
+        $isPublished = $request->boolean('is_published', true);
 
         // Ensure unique slug
-        $originalSlug = $validated['slug'];
+        $originalSlug = $slug;
         $counter = 1;
-        while (Page::where('slug', $validated['slug'])->exists()) {
-            $validated['slug'] = $originalSlug.'-'.$counter++;
+        while (Page::where('slug', $slug)->exists()) {
+            $slug = $originalSlug.'-'.$counter++;
         }
 
-        Page::create($validated);
+        Page::create([
+            'slug' => $slug,
+            'title_ar' => $validated['title'],
+            'title_en' => $validated['title'],
+            'content_ar' => $validated['content'],
+            'content_en' => $validated['content'],
+            'seo_title_ar' => $validated['meta_title'] ?? null,
+            'seo_title_en' => $validated['meta_title'] ?? null,
+            'seo_description_ar' => $validated['meta_description'] ?? null,
+            'seo_description_en' => $validated['meta_description'] ?? null,
+            'is_published' => $isPublished,
+            'published_at' => $isPublished ? now() : null,
+        ]);
 
         return redirect()
             ->route('admin.pages.index')
@@ -78,21 +94,35 @@ class PageController extends Controller
             'is_published' => 'boolean',
         ]);
 
+        $slug = $page->slug;
+
         if ($page->title !== $validated['title']) {
-            $validated['slug'] = Str::slug($validated['title']);
-            $originalSlug = $validated['slug'];
+            $slug = Str::slug($validated['title']);
+            $originalSlug = $slug;
             $counter = 1;
-            while (Page::where('slug', $validated['slug'])->where('id', '!=', $page->id)->exists()) {
-                $validated['slug'] = $originalSlug.'-'.$counter++;
+            while (Page::where('slug', $slug)->where('id', '!=', $page->id)->exists()) {
+                $slug = $originalSlug.'-'.$counter++;
             }
         }
 
-        $validated['is_published'] = $request->boolean('is_published', true);
+        $isPublished = $request->boolean('is_published', true);
 
-        $page->update($validated);
+        $page->update([
+            'slug' => $slug,
+            'title_ar' => $validated['title'],
+            'title_en' => $validated['title'],
+            'content_ar' => $validated['content'],
+            'content_en' => $validated['content'],
+            'seo_title_ar' => $validated['meta_title'] ?? null,
+            'seo_title_en' => $validated['meta_title'] ?? null,
+            'seo_description_ar' => $validated['meta_description'] ?? null,
+            'seo_description_en' => $validated['meta_description'] ?? null,
+            'is_published' => $isPublished,
+            'published_at' => $isPublished ? ($page->published_at ?? now()) : null,
+        ]);
 
         return redirect()
-            ->route('admin.pages.index')
+            ->route('admin.pages.edit', $page)
             ->with('success', 'تم تحديث الصفحة بنجاح');
     }
 

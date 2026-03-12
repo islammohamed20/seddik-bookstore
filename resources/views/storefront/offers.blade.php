@@ -31,7 +31,7 @@
             </ol>
         </nav>
         
-        <div class="text-center">
+        <div class="text-right">
             <!-- Animated Fire Icon -->
             <div class="inline-block mb-6 relative">
                 <div class="absolute inset-0 bg-primary-yellow rounded-full blur-xl animate-ping opacity-50"></div>
@@ -49,14 +49,28 @@
             </p>
             
             <!-- Offer Badges -->
+            @php
+                $freeThreshold = (float) (\App\Models\Setting::getValue('free_shipping_threshold', 200) ?? 200);
+                $maxPercent = null;
+                if (isset($offers) && $offers->count() > 0) {
+                    $maxPercent = (int) $offers->where('discount_type', 'percent')->max('discount_value');
+                    if ($maxPercent <= 0) {
+                        $maxPercent = null;
+                    }
+                }
+            @endphp
             <div class="flex flex-wrap justify-center gap-4">
                 <div class="group bg-white/10 backdrop-blur-sm px-5 py-3 rounded-full text-white border border-white/20 hover:bg-white hover:text-primary-red transition-all cursor-pointer">
                     <i class="fas fa-percent ml-2 text-primary-yellow group-hover:text-primary-red transition"></i>
-                    خصومات تصل إلى 50%
+                    @if($maxPercent)
+                        خصومات تصل إلى {{ (int) $maxPercent }}%
+                    @else
+                        خصومات مميزة
+                    @endif
                 </div>
                 <div class="group bg-white/10 backdrop-blur-sm px-5 py-3 rounded-full text-white border border-white/20 hover:bg-white hover:text-primary-red transition-all cursor-pointer">
                     <i class="fas fa-truck ml-2 text-primary-yellow group-hover:text-primary-red transition"></i>
-                    توصيل مجاني +200 ج.م
+                    توصيل مجاني للطلبات فوق {{ number_format($freeThreshold, 0) }} ج.م
                 </div>
                 <div class="group bg-white/10 backdrop-blur-sm px-5 py-3 rounded-full text-white border border-white/20 hover:bg-white hover:text-primary-red transition-all cursor-pointer">
                     <i class="fas fa-clock ml-2 text-primary-yellow group-hover:text-primary-red transition"></i>
@@ -83,19 +97,19 @@
                 <span>ينتهي العرض خلال:</span>
             </div>
             <div class="flex gap-3" x-data="countdown()" x-init="startCountdown()">
-                <div class="bg-primary-blue text-white rounded-xl p-3 text-center min-w-[70px]">
+                <div class="bg-primary-blue text-white rounded-xl p-3 text-right min-w-[70px]">
                     <div class="text-2xl font-bold" x-text="days">00</div>
                     <div class="text-xs">يوم</div>
                 </div>
-                <div class="bg-primary-blue text-white rounded-xl p-3 text-center min-w-[70px]">
+                <div class="bg-primary-blue text-white rounded-xl p-3 text-right min-w-[70px]">
                     <div class="text-2xl font-bold" x-text="hours">00</div>
                     <div class="text-xs">ساعة</div>
                 </div>
-                <div class="bg-primary-blue text-white rounded-xl p-3 text-center min-w-[70px]">
+                <div class="bg-primary-blue text-white rounded-xl p-3 text-right min-w-[70px]">
                     <div class="text-2xl font-bold" x-text="minutes">00</div>
                     <div class="text-xs">دقيقة</div>
                 </div>
-                <div class="bg-primary-blue text-white rounded-xl p-3 text-center min-w-[70px]">
+                <div class="bg-primary-blue text-white rounded-xl p-3 text-right min-w-[70px]">
                     <div class="text-2xl font-bold" x-text="seconds">00</div>
                     <div class="text-xs">ثانية</div>
                 </div>
@@ -108,7 +122,7 @@
 <section class="py-16 bg-white">
     <div class="container mx-auto px-4">
         @if(isset($offers) && $offers->count() > 0)
-        <div class="text-center mb-12">
+        <div class="text-right mb-12">
             <span class="inline-block bg-primary-red/10 text-primary-red px-4 py-2 rounded-full text-sm font-bold mb-4">
                 <i class="fas fa-fire ml-1"></i>
                 عروض نشطة
@@ -125,7 +139,15 @@
                          alt="{{ $offer->name_ar ?? $offer->name_en }}"
                          class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500">
                     @else
-                    <div class="w-full h-48 bg-gradient-to-br from-primary-red to-red-600 flex items-center justify-center">
+                    @php
+                        $cFrom = $offer->banner_color_from;
+                        $cTo = $offer->banner_color_to;
+                        $inlineGradient = ($cFrom || $cTo)
+                            ? 'background-image: linear-gradient(135deg, ' . ($cFrom ?: '#FF4433') . ', ' . ($cTo ?: '#CC0000') . ');'
+                            : '';
+                    @endphp
+                    <div class="w-full h-48 bg-gradient-to-br from-primary-red to-red-600 flex items-center justify-center"
+                         style="{{ $inlineGradient }}">
                         <i class="fas fa-tags text-6xl text-white/30"></i>
                     </div>
                     @endif
@@ -165,7 +187,7 @@
                     </div>
                     
                     <a href="{{ route('offers.show', $offer) }}" 
-                       class="block w-full text-center bg-gradient-to-r from-primary-yellow to-amber-400 text-primary-blue py-3 rounded-xl font-bold hover:shadow-lg transition transform hover:scale-[1.02]">
+                       class="block w-full text-right bg-gradient-to-r from-primary-yellow to-amber-400 text-primary-blue py-3 rounded-xl font-bold hover:shadow-lg transition transform hover:scale-[1.02]">
                         <i class="fas fa-shopping-cart ml-2"></i>
                         تسوق الآن
                     </a>
@@ -175,7 +197,7 @@
         </div>
         @else
         <!-- No Active Offers - Show Categories with Discounts -->
-        <div class="text-center mb-12">
+        <div class="text-right mb-12">
             <span class="inline-block bg-primary-yellow/20 text-primary-yellow px-4 py-2 rounded-full text-sm font-bold mb-4">
                 <i class="fas fa-star ml-1"></i>
                 عروض حصرية
@@ -235,7 +257,7 @@
                     
                     <!-- CTA Button -->
                     <a href="{{ $cat['link'] }}" 
-                       class="block {{ $cc['bg'] }} hover:bg-white/30 text-center py-3 rounded-xl font-semibold transition-all transform group-hover:scale-105">
+                       class="block {{ $cc['bg'] }} hover:bg-white/30 text-right py-3 rounded-xl font-semibold transition-all transform group-hover:scale-105">
                         تسوق الآن
                         <i class="fas fa-arrow-left mr-2 transform group-hover:-translate-x-1 transition-transform"></i>
                     </a>
@@ -250,7 +272,7 @@
 <!-- Why Shop Our Offers Section -->
 <section class="py-16 bg-gray-50">
     <div class="container mx-auto px-4">
-        <div class="text-center mb-12">
+        <div class="text-right mb-12">
             <span class="inline-block bg-primary-blue/10 text-primary-blue px-4 py-2 rounded-full text-sm font-bold mb-4">
                 <i class="fas fa-gift ml-1"></i>
                 لماذا عروضنا مميزة؟
@@ -269,7 +291,7 @@
             @endphp
             
             @foreach($features as $feature)
-            <div class="bg-white rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
+            <div class="bg-white rounded-2xl p-6 text-right shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
                 <div class="w-16 h-16 bg-{{ $feature['color'] }}-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <i class="fas {{ $feature['icon'] }} text-2xl text-{{ $feature['color'] }}-600"></i>
                 </div>
@@ -290,7 +312,7 @@
     </div>
     
     <div class="container mx-auto px-4 relative z-10">
-        <div class="max-w-2xl mx-auto text-center">
+        <div class="max-w-2xl mx-auto text-right">
             <div class="inline-block mb-6 relative">
                 <div class="absolute inset-0 bg-primary-yellow rounded-full blur-lg animate-ping opacity-50"></div>
                 <div class="relative w-20 h-20 bg-primary-yellow rounded-full flex items-center justify-center shadow-xl">

@@ -124,7 +124,7 @@ class BrandController extends Controller
         $brand->update($data);
 
         return redirect()
-            ->route('admin.brands.index')
+            ->route('admin.brands.edit', $brand)
             ->with('success', 'تم تحديث العلامة التجارية بنجاح');
     }
 

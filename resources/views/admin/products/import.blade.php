@@ -68,6 +68,8 @@
                         <p class="font-semibold text-blue-900 mb-1.5">اختيارية</p>
                         <ul class="space-y-1 text-blue-800">
                             <li><code class="bg-blue-100 px-1.5 py-0.5 rounded text-xs">description</code> — الوصف</li>
+                            <li><code class="bg-blue-100 px-1.5 py-0.5 rounded text-xs">name_en</code> — اسم المنتج بالإنجليزية</li>
+                            <li><code class="bg-blue-100 px-1.5 py-0.5 rounded text-xs">description_en</code> — الوصف بالإنجليزية</li>
                             <li><code class="bg-blue-100 px-1.5 py-0.5 rounded text-xs">sale_price</code> — سعر التخفيض</li>
                             <li><code class="bg-blue-100 px-1.5 py-0.5 rounded text-xs">stock</code> — الكمية المتاحة</li>
                             <li><code class="bg-blue-100 px-1.5 py-0.5 rounded text-xs">sku</code> — رمز المنتج</li>
@@ -120,11 +122,62 @@
                 @endif
             </div>
 
-            <a href="{{ route('admin.products.template') }}" 
-               class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm shadow-sm">
-                <i class="fas fa-file-download"></i>
-                تحميل قالب CSV
-            </a>
+            <div x-data="{ showTemplateInfo: false }">
+                <a href="{{ route('admin.products.template') }}" 
+                   @click.prevent="showTemplateInfo = true"
+                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm shadow-sm">
+                    <i class="fas fa-file-download"></i>
+                    تحميل قالب CSV
+                </a>
+
+                <div x-show="showTemplateInfo" x-cloak
+                     class="fixed inset-0 z-50 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-black/50" @click="showTemplateInfo = false"></div>
+                    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-gray-800">تنويه هام قبل التنزيل</h3>
+                            <button class="w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-600"
+                                    @click="showTemplateInfo = false">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="p-6 space-y-4 text-sm text-gray-700">
+                            <p class="text-gray-700">
+                                عند ملء عمود <span class="font-semibold">category_id</span> في القالب، استخدم أرقام التصنيفات كما هو موضح أدناه. هذا يضمن حفظ المنتج في التصنيف الصحيح.
+                            </p>
+                            @if(isset($categories) && $categories->count())
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 mb-2 flex items-center gap-2">
+                                    <i class="fas fa-folder text-indigo-500"></i>
+                                    التصنيفات وأرقامها
+                                </h4>
+                                <div class="max-h-56 overflow-y-auto space-y-1">
+                                    @foreach($categories as $cat)
+                                        <div class="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
+                                            <span class="text-gray-700">{{ $cat->name_ar ?: $cat->name_en }}</span>
+                                            <span class="font-mono bg-gray-200 px-2 py-0.5 rounded">{{ $cat->id }}</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+                            <p class="text-gray-700">
+                                يمكنك ترك <span class="font-semibold">category_id</span> فارغًا إذا لم ترغب في تعيين تصنيف. كما يمكنك استخدام <span class="font-semibold">brand_id</span> إن أردت ربط المنتج بعلامة تجارية.
+                            </p>
+                        </div>
+                        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-2">
+                            <button class="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                    @click="showTemplateInfo = false">
+                                فهمت
+                            </button>
+                            <button class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                    @click="window.location.href='{{ route('admin.products.template') }}'; showTemplateInfo = false">
+                                تنزيل القالب الآن
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -145,7 +198,7 @@
                 @csrf
 
                 {{-- Drop Zone --}}
-                <div class="border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer"
+                <div class="border-2 border-dashed rounded-xl p-8 text-right transition-all cursor-pointer"
                      :class="file ? 'border-green-400 bg-green-50' : (dragover ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-indigo-400 bg-gray-50')"
                      @click="$refs.fileInput.click()"
                      @dragover.prevent="dragover = true"
@@ -195,7 +248,7 @@
                             <ul class="list-disc list-inside space-y-0.5">
                                 <li>إذا كان المنتج موجود مسبقاً (بنفس الـ id أو sku) سيتم تحديثه</li>
                                 <li>يُقبل الفاصل <code>,</code> أو <code>;</code> تلقائياً</li>
-                                <li>الأعمدة الإجبارية فقط: <strong>name</strong> و <strong>price</strong></li>
+                                <li>الأعمدة الإجبارية: <strong>name</strong> مع <strong>price</strong></li>
                             </ul>
                         </div>
                     </div>

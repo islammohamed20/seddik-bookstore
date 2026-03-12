@@ -6,11 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'لوحة التحكم') - {{ config('app.name') }}</title>
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Vite Assets (Tailwind CSS + Alpine.js) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -41,9 +38,19 @@
             
             <!-- Logo -->
             <div class="flex items-center justify-center h-16 bg-indigo-900 flex-shrink-0">
-                <a href="{{ route('admin.dashboard') }}" class="text-xl font-bold">
-                    <i class="fas fa-book-open ml-2"></i>
-                    {{ config('app.name', 'صديق بوك') }}
+                @php
+                    $adminLogoPath = \App\Models\Setting::getValue('site_logo');
+                    $adminLogoUrl = $adminLogoPath ? asset('storage/'.$adminLogoPath) : null;
+                @endphp
+                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
+                    @if($adminLogoUrl)
+                        <img src="{{ $adminLogoUrl }}" alt="{{ \App\Models\Setting::getValue('site_name', config('app.name')) }}" class="h-10 w-auto rounded bg-white p-1">
+                    @else
+                        <span class="text-xl font-bold">
+                            <i class="fas fa-book-open ml-2"></i>
+                            {{ config('app.name', 'صديق بوك') }}
+                        </span>
+                    @endif
                 </a>
             </div>
             
@@ -58,6 +65,11 @@
                     route="admin.products.*" 
                     icon="fas fa-box" 
                     label="المنتجات" />
+
+                <x-admin.sidebar-link 
+                    route="admin.product-attributes.*" 
+                    icon="fas fa-list-ul" 
+                    label="خصائص المنتجات" />
                 
                 <x-admin.sidebar-link 
                     route="admin.categories.*" 
@@ -68,6 +80,11 @@
                     route="admin.brands.*" 
                     icon="fas fa-tags" 
                     label="العلامات التجارية" />
+
+                <x-admin.sidebar-link 
+                    route="admin.tags.*" 
+                    icon="fas fa-hashtag" 
+                    label="Tags" />
                 
                 <x-admin.sidebar-link 
                     route="admin.orders.*" 
@@ -76,8 +93,13 @@
                 
                 <x-admin.sidebar-link 
                     route="admin.users.*" 
+                    icon="fas fa-users-cog" 
+                    label="مستخدمي النظام" />
+
+                <x-admin.sidebar-link 
+                    route="admin.customers.*" 
                     icon="fas fa-users" 
-                    label="المستخدمين" />
+                    label="العملاء" />
                 
                 <x-admin.sidebar-link 
                     route="admin.coupons.*" 
@@ -215,6 +237,9 @@
     
     <!-- Admin Notifications -->
     <script src="{{ asset('js/admin-notifications.js') }}"></script>
+
+    <!-- Product Attributes Manager -->
+    <script src="{{ asset('js/product-attributes-manager.js') }}"></script>
     
     @stack('scripts')
 </body>

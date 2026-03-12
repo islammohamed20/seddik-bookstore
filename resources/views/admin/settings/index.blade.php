@@ -36,6 +36,18 @@
                 <textarea name="site_description" rows="3"
                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">{{ $settings['site_description'] ?? '' }}</textarea>
             </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">رابط الموقع على خريطة جوجل</label>
+                <input type="url" name="google_maps_url" value="{{ $settings['google_maps_url'] ?? '' }}"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
+                       placeholder="https://www.google.com/maps/...">
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">تفاصيل Location (وصف نصي للموقع)</label>
+                <textarea name="location_details" rows="3"
+                          class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
+                          placeholder="مثال: بجوار الوطنية مول، أمام ...">{{ $settings['location_details'] ?? '' }}</textarea>
+            </div>
         </div>
     </div>
     
@@ -94,13 +106,18 @@
         </div>
     </div>
 
-    <!-- Cart Settings -->
+    <!-- Cart & Inventory Settings -->
     <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">إعدادات سلة التسوق</h3>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">إعدادات سلة التسوق والمخزون</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">الحد الأدنى لقيمة الطلب في السلة</label>
-                <input type="number" name="cart_min_order_value" value="{{ $settings['cart_min_order_value'] ?? 0 }}" step="0.01" min="0"
+                <label class="block text-sm font-medium text-gray-700 mb-1">الحد الأدنى للسلة داخل أسيوط</label>
+                <input type="number" name="cart_min_order_inside_assiut" value="{{ $settings['cart_min_order_inside_assiut'] ?? 50 }}" step="0.01" min="0"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">الحد الأدنى للسلة خارج أسيوط</label>
+                <input type="number" name="cart_min_order_outside_assiut" value="{{ $settings['cart_min_order_outside_assiut'] ?? 500 }}" step="0.01" min="0"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
             </div>
             <div>
@@ -114,6 +131,12 @@
                 <input type="number" name="cart_max_qty_per_item" value="{{ $settings['cart_max_qty_per_item'] ?? '' }}" min="1"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
                        placeholder="اتركه فارغًا لعدم التقييد">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">الحد الافتراضي لتنبيه المخزون المنخفض</label>
+                <input type="number" name="default_low_stock_threshold" value="{{ $settings['default_low_stock_threshold'] ?? 5 }}" min="0"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                <p class="text-xs text-gray-500 mt-1">يُستخدم كقيمة افتراضية لحقل حد التنبيه في المنتجات الجديدة.</p>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">تفريغ السلة بعد (بالساعات)</label>
@@ -167,6 +190,13 @@
                     <i class="fab fa-youtube text-red-600 ml-1"></i>YouTube
                 </label>
                 <input type="url" name="youtube_url" value="{{ $settings['youtube_url'] ?? '' }}"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <i class="fab fa-tiktok text-gray-900 ml-1"></i>TikTok
+                </label>
+                <input type="url" name="tiktok_url" value="{{ $settings['tiktok_url'] ?? '' }}"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
             </div>
             <div>

@@ -105,7 +105,7 @@ class CouponController extends Controller
         $coupon->update($validated);
 
         return redirect()
-            ->route('admin.coupons.index')
+            ->route('admin.coupons.edit', $coupon)
             ->with('success', 'تم تحديث الكوبون بنجاح');
     }
 

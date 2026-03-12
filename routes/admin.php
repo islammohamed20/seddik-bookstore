@@ -11,10 +11,12 @@ use App\Http\Controllers\Admin\OfferController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductAttributeController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ShippingZoneController;
 use App\Http\Controllers\Admin\ShippingMethodController;
 use App\Http\Controllers\Admin\SliderController;
+use App\Http\Controllers\Admin\TagGroupController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VisitReportController;
 use Illuminate\Support\Facades\Route;
@@ -30,19 +32,38 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     // Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Products
+    // Products (bind by ID, not slug, for admin panel)
     Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
     Route::get('products/import', [ProductController::class, 'importPage'])->name('products.import-page');
     Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
     Route::get('products/template', [ProductController::class, 'template'])->name('products.template');
-    Route::resource('products', ProductController::class);
-    Route::post('products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
-    Route::delete('products/{product}/images/{image}', [ProductController::class, 'deleteImage'])->name('products.delete-image');
+    Route::get('products/teck-toys', [ProductController::class, 'teckToys'])->name('products.teck-toys');
+    Route::resource('products', ProductController::class)->scoped(['product' => 'id']);
+    Route::post('products/{product:id}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
+    Route::delete('products/{product:id}/images/{image}', [ProductController::class, 'deleteImage'])->name('products.delete-image');
+    
+    // Product Variants
+    Route::get('products/{product:id}/variants', [ProductController::class, 'getVariants'])->name('products.variants.list');
+    Route::post('products/{product:id}/variants', [ProductController::class, 'storeVariant'])->name('products.variants.store');
+    Route::put('products/{product:id}/variants/{variant}', [ProductController::class, 'updateVariant'])->name('products.variants.update')->whereNumber('variant');
+    Route::post('products/{product:id}/variants/{variant}', [ProductController::class, 'updateVariant'])->name('products.variants.update-post')->whereNumber('variant');
+    Route::delete('products/{product:id}/variants/{variant}', [ProductController::class, 'destroyVariant'])->name('products.variants.destroy')->whereNumber('variant');
+
+    // Tags (Tag Groups & Options)
+    Route::resource('tags', TagGroupController::class)->parameters(['tags' => 'tag']);
+    Route::post('tags/{tag}/toggle-status', [TagGroupController::class, 'toggleStatus'])->name('tags.toggle-status');
+
+    // Product Attributes
+    Route::resource('product-attributes', ProductAttributeController::class)
+        ->parameters(['product-attributes' => 'productAttribute']);
+    Route::post('product-attributes/{productAttribute}/toggle-status', [ProductAttributeController::class, 'toggleStatus'])
+        ->name('product-attributes.toggle-status');
 
     // Categories
     Route::resource('categories', CategoryController::class);
     Route::post('categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('categories.toggle-status');
     Route::post('categories/{category}/toggle-featured', [CategoryController::class, 'toggleFeatured'])->name('categories.toggle-featured');
+    Route::delete('categories/{category}/banner/{type}', [CategoryController::class, 'deleteBanner'])->name('categories.delete-banner');
 
     // Brands
     Route::resource('brands', BrandController::class);
@@ -55,6 +76,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     // Users
     Route::resource('users', UserController::class);
     Route::post('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+
+    // Customers (frontend clients)
+    Route::get('customers', [UserController::class, 'index'])->name('customers.index');
 
     // Coupons
     Route::resource('coupons', CouponController::class);

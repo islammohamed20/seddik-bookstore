@@ -5,13 +5,25 @@
 @section('content')
 <div class="min-h-screen bg-gray-100 py-12 flex items-center justify-center">
     <div class="w-full max-w-md px-4">
-        <!-- Logo -->
+        @php
+            $siteLogoPath = \App\Models\Setting::getValue('site_logo');
+            $siteLogoUrl = $siteLogoPath ? asset('storage/'.$siteLogoPath) : null;
+            $siteName = \App\Models\Setting::getValue('site_name', 'مكتبة الصديق');
+        @endphp
         <div class="text-center mb-8">
-            <a href="{{ route('home') }}" class="inline-block">
-                <span class="text-3xl font-bold">
-                    <span class="text-primary-yellow">متجر</span>
-                    <span class="text-primary-blue">الصديق</span>
-                </span>
+            <a href="{{ route('home') }}" class="inline-flex items-center justify-center gap-3">
+                @if($siteLogoUrl)
+                    <div class="w-16 h-16 rounded-2xl overflow-hidden bg-white flex items-center justify-center shadow">
+                        <img src="{{ $siteLogoUrl }}" alt="{{ $siteName }}" class="w-full h-full object-contain">
+                    </div>
+                @else
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary-yellow to-primary-blue flex items-center justify-center text-white text-2xl font-black">
+                        <i class="fas fa-book"></i>
+                    </div>
+                @endif
+                <div class="text-right">
+                    <div class="text-2xl font-extrabold text-primary-blue">{{ $siteName }}</div>
+                </div>
             </a>
         </div>
 

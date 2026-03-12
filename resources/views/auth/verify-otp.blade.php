@@ -34,7 +34,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('register.verify') }}" class="space-y-6" id="otpForm">
+            <form method="POST" action="{{ route('register.verify.submit') }}" class="space-y-6" id="otpForm">
                 @csrf
 
                 <!-- OTP Input -->

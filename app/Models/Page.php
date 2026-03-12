@@ -30,6 +30,50 @@ class Page extends Model
         'published_at' => 'datetime',
     ];
 
+    public function getTitleAttribute(): string
+    {
+        $locale = app()->getLocale();
+
+        if ($locale === 'ar') {
+            return $this->title_ar ?: $this->title_en;
+        }
+
+        return $this->title_en ?: $this->title_ar;
+    }
+
+    public function getContentAttribute(): ?string
+    {
+        $locale = app()->getLocale();
+
+        if ($locale === 'ar') {
+            return $this->content_ar ?: $this->content_en;
+        }
+
+        return $this->content_en ?: $this->content_ar;
+    }
+
+    public function getMetaTitleAttribute(): ?string
+    {
+        $locale = app()->getLocale();
+
+        if ($locale === 'ar') {
+            return $this->seo_title_ar ?: $this->seo_title_en;
+        }
+
+        return $this->seo_title_en ?: $this->seo_title_ar;
+    }
+
+    public function getMetaDescriptionAttribute(): ?string
+    {
+        $locale = app()->getLocale();
+
+        if ($locale === 'ar') {
+            return $this->seo_description_ar ?: $this->seo_description_en;
+        }
+
+        return $this->seo_description_en ?: $this->seo_description_ar;
+    }
+
     public function getRouteKeyName(): string
     {
         return 'slug';

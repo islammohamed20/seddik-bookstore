@@ -18,7 +18,10 @@ class DatabaseSeeder extends Seeder
         // Create admin user and roles
         $this->call(AdminSeeder::class);
 
+        // Seed default Tags (e.g., Age group)
+        $this->call(TagSeeder::class);
         // Create test user
         // User::factory(10)->create();
     }
 }
+

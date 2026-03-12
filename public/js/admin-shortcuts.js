@@ -79,7 +79,11 @@ class AdminKeyboardShortcuts {
         if (event.ctrlKey) parts.push('ctrl');
         if (event.altKey) parts.push('alt');
         if (event.shiftKey) parts.push('shift');
-        parts.push(event.key.toLowerCase());
+        
+        // تحقق من وجود event.key قبل استخدامه
+        if (event.key) {
+            parts.push(event.key.toLowerCase());
+        }
         
         return parts.join('+');
     }
@@ -97,27 +101,81 @@ class AdminKeyboardShortcuts {
     // === الوظائف الرئيسية ===
     
     saveForm() {
-        // ابحث عن الـ form الرئيسي
-        const allForms = document.querySelectorAll('form');
+        // البحث عن الـ form الرئيسي
         let targetForm = null;
-        
-        // أولاً: ابحث عن form بـ action يحتوي على 'update' أو 'store'
-        for (let form of allForms) {
-            const action = form.getAttribute('action') || '';
-            if (action.includes('update') || action.includes('store')) {
-                targetForm = form;
-                break;
+
+        // 0. الأولوية القصوى لفورمات محددة صراحة
+        targetForm = document.querySelector('form[data-shortcut-save="true"], #product-form, #main-form');
+
+        // 1. ابحث عن form بـ id="main-form"
+        if (!targetForm) {
+            targetForm = document.getElementById('main-form');
+        }
+
+        // 2. إذا لم تجد، ابحث عن form داخل عنصر main
+        if (!targetForm) {
+            const mainContent = document.querySelector('main');
+            if (mainContent) {
+                const formsInMain = mainContent.querySelectorAll('form');
+                // استبعد فورمات الحذف/التبديل/الإجراءات السريعة
+                for (let form of formsInMain) {
+                    const action = (form.getAttribute('action') || '').toLowerCase();
+                    const methodInput = form.querySelector('input[name="_method"]');
+                    const method = (methodInput?.value || '').toUpperCase();
+                    const isDelete = method === 'DELETE';
+                    const isQuickAction = action.includes('toggle-status') ||
+                        action.includes('toggle-featured') ||
+                        action.includes('mark-read') ||
+                        action.includes('reply') ||
+                        action.includes('logout') ||
+                        action.includes('delete') ||
+                        action.includes('destroy');
+
+                    if (!isDelete && !isQuickAction) {
+                        targetForm = form;
+                        break; // نأخذ أول فورم رئيسي
+                    }
+                }
             }
         }
         
-        // إذا لم تجد، استخدم آخر form
-        if (!targetForm && allForms.length > 0) {
-            targetForm = allForms[allForms.length - 1];
+        // 3. المحاولة القديمة: البحث عن form بـ action يحتوي على 'update' أو 'store'
+        if (!targetForm) {
+            const allForms = document.querySelectorAll('form');
+            for (let form of allForms) {
+                const action = (form.getAttribute('action') || '').toLowerCase();
+                // تجاهل فورم تسجيل الخروج
+                if (action.includes('logout')) continue;
+                if (action.includes('toggle-status') || action.includes('toggle-featured') || action.includes('mark-read') || action.includes('reply')) continue;
+                
+                if (action.includes('update') || action.includes('store')) {
+                    targetForm = form;
+                    break;
+                }
+            }
         }
         
-        // حافظ على آخر form كـ fallback
-        if (!targetForm && allForms.length > 0) {
-            targetForm = allForms[allForms.length - 1];
+        // 4. fallback: آخر form في الصفحة (مع تجاهل logout)
+        if (!targetForm) {
+            const allForms = document.querySelectorAll('form');
+            if (allForms.length > 0) {
+                // نبدأ من الآخر
+                for (let i = allForms.length - 1; i >= 0; i--) {
+                    const form = allForms[i];
+                    const action = (form.getAttribute('action') || '').toLowerCase();
+                    const isQuickAction = action.includes('toggle-status') ||
+                        action.includes('toggle-featured') ||
+                        action.includes('mark-read') ||
+                        action.includes('reply') ||
+                        action.includes('logout') ||
+                        action.includes('delete') ||
+                        action.includes('destroy');
+                    if (!isQuickAction) {
+                        targetForm = form;
+                        break;
+                    }
+                }
+            }
         }
         
         if (targetForm) {

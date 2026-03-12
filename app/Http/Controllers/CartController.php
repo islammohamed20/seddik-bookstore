@@ -47,11 +47,27 @@ class CartController extends Controller
 
     public function store(Request $request, Product $product)
     {
+        if (! auth()->check()) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'يجب عليك تسجيل الدخول أولاً',
+                    'requires_login' => true,
+                ], 401);
+            }
+
+            return redirect()
+                ->route('login')
+                ->with('status', 'يجب عليك تسجيل الدخول أولاً');
+        }
+
         $validated = $request->validate([
             'quantity' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
         ]);
 
         $quantity = $validated['quantity'] ?? 1;
+        $variantId = $validated['variant_id'] ?? null;
 
         // التحقق من أن المنتج نشط ومتوفر
         if (! $product->is_active) {
@@ -66,28 +82,53 @@ class CartController extends Controller
                 ->with('error', 'هذا المنتج نفذ من المخزون');
         }
 
+        // التحقق من المتغير إن كان المنتج متغير
+        $variant = null;
+        $variantName = '';
+        if ($product->product_type === 'variable' && $variantId) {
+            $variant = $product->variants()->with('attributeValues.attribute')->find($variantId);
+            if (! $variant) {
+                return redirect()
+                    ->back()
+                    ->with('error', 'اختيار المتغير غير صحيح');
+            }
+            // Build variant display name from attributes
+            $variantName = $variant->attributeValues->map(function ($av) {
+                return ($av->attribute?->name_ar ?? $av->attribute?->name_en ?? '') . ': ' . $av->value;
+            })->join(' | ');
+        } elseif ($product->product_type === 'variable' && $product->variants()->count() > 0) {
+            return redirect()
+                ->back()
+                ->with('error', 'يرجى اختيار المواصفات المطلوبة');
+        }
+
         $cart = $this->getCart($request);
 
-        $key = (string) $product->id;
+        // Cart key includes variant_id for variable products
+        $key = $variantId ? $product->id . '_v' . $variantId : (string) $product->id;
         $currentQuantity = $cart[$key]['quantity'] ?? 0;
         $newQuantity = $currentQuantity + $quantity;
 
-        // التحقق من توفر الكمية المطلوبة
-        if ($newQuantity > $product->stock_quantity) {
+        // Check stock for variant or product
+        $availableStock = $variant ? (int) $variant->stock_quantity : $product->stock_quantity;
+        if ($newQuantity > $availableStock) {
             return redirect()
                 ->back()
-                ->with('error', 'الكمية المطلوبة غير متوفرة. المتوفر: '.$product->stock_quantity);
+                ->with('error', 'الكمية المطلوبة غير متوفرة. المتوفر: ' . $availableStock);
         }
 
-        $price = $product->sale_price ?? $product->price;
+        // Use base product price
+        $price = (float) ($product->sale_price ?? $product->price);
 
         if (isset($cart[$key])) {
             $cart[$key]['quantity'] = $newQuantity;
-            $cart[$key]['price'] = (float) $price; // تحديث السعر
+            $cart[$key]['price'] = (float) $price;
         } else {
             $cart[$key] = [
                 'product_id' => $product->id,
-                'name' => $product->name_en ?? $product->name_ar,
+                'variant_id' => $variantId,
+                'variant_name' => $variantName,
+                'name' => $product->name_ar ?? $product->name_en,
                 'slug' => $product->slug,
                 'price' => (float) $price,
                 'quantity' => $quantity,
@@ -172,7 +213,7 @@ class CartController extends Controller
      */
     protected function validateCart(array $cart): array
     {
-        $productIds = collect($cart)->pluck('product_id')->toArray();
+        $productIds = collect($cart)->pluck('product_id')->unique()->toArray();
 
         if (empty($productIds)) {
             return [];
@@ -184,6 +225,18 @@ class CartController extends Controller
             ->get()
             ->keyBy('id');
 
+        // Load variants for variant items
+        $variantIds = collect($cart)->pluck('variant_id')->filter()->unique()->toArray();
+        $variants = [];
+        if (! empty($variantIds)) {
+            $variants = \App\Models\ProductVariant::query()
+                ->whereIn('id', $variantIds)
+                ->where('is_active', true)
+                ->with('attributeValues.attribute')
+                ->get()
+                ->keyBy('id');
+        }
+
         $validatedCart = [];
 
         foreach ($cart as $key => $item) {
@@ -193,13 +246,30 @@ class CartController extends Controller
                 continue; // المنتج غير موجود أو غير نشط
             }
 
+            // Check variant validity
+            $variant = null;
+            if (! empty($item['variant_id'])) {
+                $variant = $variants[$item['variant_id']] ?? null;
+                if (! $variant) {
+                    continue; // المتغير غير موجود أو غير نشط
+                }
+            }
+
             // تحديث السعر
             $item['price'] = (float) ($product->sale_price ?? $product->price);
-            $item['name'] = $product->name_en ?? $product->name_ar;
+            $item['name'] = $product->name_ar ?? $product->name_en;
+
+            // Update variant name
+            if ($variant) {
+                $item['variant_name'] = $variant->attributeValues->map(function ($av) {
+                    return ($av->attribute?->name_ar ?? '') . ': ' . $av->value;
+                })->join(' | ');
+            }
 
             // التحقق من الكمية المتوفرة
-            if ($product->stock_quantity > 0) {
-                $item['quantity'] = min($item['quantity'], $product->stock_quantity);
+            $availableStock = $variant ? (int) $variant->stock_quantity : $product->stock_quantity;
+            if ($availableStock > 0) {
+                $item['quantity'] = min($item['quantity'], $availableStock);
                 $validatedCart[$key] = $item;
             }
         }

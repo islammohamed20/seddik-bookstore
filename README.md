@@ -7,6 +7,15 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Seddik Bookstore
+
+مشروع متجر إلكتروني (Laravel) لمكتبة/متجر “الصديق”.
+
+### آخر تحديث
+
+- توحيد شكل صفحات Tags داخل لوحة التحكم لتستخدم نفس Layout الخاص بلوحة الإدارة.
+- تحسين عرض المنتج (Storefront): إزالة جمل “شامل جميع الضرائب” و “اختر متغير لعرض السعر”، وعند اختيار متغير يتم عرض صورة وسعر المتغير أسفل اسم المنتج مع الإبقاء على أزرار المتغيرات وإخفاء عرض الكمية.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

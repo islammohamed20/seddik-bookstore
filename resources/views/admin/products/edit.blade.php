@@ -1,482 +1,807 @@
 @extends('admin.layouts.app')
 
-@section('title', 'تعديل منتج')
-@section('page-title', 'تعديل المنتج')
+@section('title', 'تعديل المنتج')
+@section('page-title', 'تعديل المنتج: ' . ($product->name_ar ?: $product->name_en))
 
 @section('content')
-<div class="max-w-6xl mx-auto" x-data="{
-    tab: 'basic',
-    loading: false,
-    submitForm() {
-        this.loading = true;
-        // اختر الـ form الذي يحتوي على @submit.prevent (الـ form الرئيسي)
-        setTimeout(() => {
-            const forms = document.querySelectorAll('form');
-            let mainForm = null;
-            
-            // ابحث عن form بـ action يحتوي على 'update'
-            for (let form of forms) {
-                if (form.action.includes('update') || form.action.includes('store')) {
-                    mainForm = form;
-                    break;
-                }
-            }
-            
-            // إذا لم تجد، استخدم آخر form
-            if (!mainForm && forms.length > 0) {
-                mainForm = forms[forms.length - 1];
-            }
-            
-            if (mainForm) {
-                mainForm.submit();
-            }
-        }, 50);
-    }
+<div x-data="{ 
+    activeTab: 'general',
+    productType: '{{ old('product_type', $product->product_type) }}'
 }">
 
-    {{-- Header --}}
-    <div class="bg-white rounded-xl shadow-sm mb-6 p-5">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-                <a href="{{ route('admin.products.index') }}"
-                   class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-                   title="العودة للقائمة">
-                    <i class="fas fa-arrow-right text-gray-600"></i>
-                </a>
-                <div>
-                    <h2 class="text-xl font-bold text-gray-800">{{ $product->name_ar }}</h2>
-                    <div class="flex items-center gap-3 mt-1 text-sm">
-                        <span class="text-gray-500">SKU: {{ $product->sku ?? '—' }}</span>
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
-                            {{ $product->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
-                            <i class="fas fa-circle text-[6px]"></i>
-                            {{ $product->is_active ? 'نشط' : 'معطّل' }}
-                        </span>
-                    </div>
-                </div>
-            </div>
+    <!-- Tabs Header -->
+    <div class="mb-6 border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8 space-x-reverse overflow-x-auto" aria-label="Tabs">
+            <button @click.prevent="activeTab = 'general'" 
+                    :class="{ 'border-indigo-500 text-indigo-600': activeTab === 'general', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'general' }"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none">
+                معلومات عامة
+            </button>
 
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-                <a href="{{ route('products.show', $product->slug) }}" target="_blank"
-                   class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium">
-                    <i class="fas fa-external-link-alt"></i>
-                    <span>معاينة</span>
-                </a>
+            <button @click.prevent="activeTab = 'data'" 
+                    :class="{ 'border-indigo-500 text-indigo-600': activeTab === 'data', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'data' }"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none">
+                البيانات والمخزون
+            </button>
 
-                <form action="{{ route('admin.products.toggle-status', $product) }}" method="POST" class="flex-1 sm:flex-none">
-                    @csrf
-                    <button type="submit"
-                            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
-                                {{ $product->is_active
-                                    ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
-                                    : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100' }}">
-                        <i class="fas fa-{{ $product->is_active ? 'eye-slash' : 'eye' }}"></i>
-                        <span>{{ $product->is_active ? 'تعطيل' : 'تنشيط' }}</span>
-                    </button>
-                </form>
-            </div>
-        </div>
+            <button @click.prevent="activeTab = 'media'" 
+                    :class="{ 'border-indigo-500 text-indigo-600': activeTab === 'media', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'media' }"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none">
+                الصور والفيديو
+            </button>
+
+            <button x-show="productType === 'variable'"
+                    @click.prevent="activeTab = 'variants'" 
+                    :class="{ 'border-indigo-500 text-indigo-600': activeTab === 'variants', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'variants' }"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none">
+                المتغيرات
+            </button>
+
+            <button @click.prevent="activeTab = 'reviews'" 
+                    :class="{ 'border-indigo-500 text-indigo-600': activeTab === 'reviews', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'reviews' }"
+                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm focus:outline-none">
+                المراجعات
+            </button>
+        </nav>
     </div>
 
-    {{-- Validation Errors --}}
-    @if($errors->any())
-        <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-            <div class="flex items-center gap-2 mb-2">
-                <i class="fas fa-exclamation-triangle text-red-600"></i>
-                <p class="text-red-800 font-semibold text-sm">يوجد أخطاء في البيانات المدخلة:</p>
-            </div>
-            <ul class="text-red-700 text-sm list-disc list-inside space-y-0.5">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-    {{-- Main Form --}}
-    <form action="{{ route('admin.products.update', $product) }}"
-          method="POST"
-          enctype="multipart/form-data"
-          @submit.prevent="submitForm()">
+    <form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data" id="main-form" class="space-y-6">
         @csrf
         @method('PUT')
 
-        {{-- Tabs --}}
-        <div class="bg-white rounded-xl shadow-sm mb-6">
-            <div class="border-b border-gray-200 px-2">
-                <nav class="flex gap-1 overflow-x-auto" aria-label="Tabs">
-                    @php
-                        $tabs = [
-                            'basic'    => ['icon' => 'fas fa-box',        'label' => 'المعلومات الأساسية'],
-                            'details'  => ['icon' => 'fas fa-align-left', 'label' => 'الوصف والتفاصيل'],
-                            'images'   => ['icon' => 'fas fa-images',     'label' => 'الصور'],
-                            'settings' => ['icon' => 'fas fa-sliders-h',  'label' => 'الإعدادات'],
-                        ];
-                    @endphp
-                    @foreach($tabs as $key => $t)
-                        <button type="button"
-                                @click="tab = '{{ $key }}'"
-                                :class="tab === '{{ $key }}'
-                                    ? 'border-indigo-600 text-indigo-600 bg-indigo-50/60'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
-                                class="flex items-center gap-2 px-4 py-3.5 border-b-2 text-sm font-medium whitespace-nowrap transition-colors">
-                            <i class="{{ $t['icon'] }}"></i>
-                            <span>{{ $t['label'] }}</span>
-                            @if($key === 'images' && $product->images->count())
-                                <span class="px-1.5 py-0.5 text-[10px] rounded-full bg-indigo-100 text-indigo-700">{{ $product->images->count() }}</span>
-                            @endif
-                        </button>
-                    @endforeach
-                </nav>
+        <!-- General Tab -->
+        <div x-show="activeTab === 'general'" class="space-y-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">معلومات أساسية</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="name_ar" class="block text-sm font-medium text-gray-700 mb-1">اسم المنتج عربي *</label>
+                        <input type="text" name="name_ar" id="name_ar" value="{{ old('name_ar', $product->name_ar) }}" required
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        @error('name_ar')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <div>
+                        <label for="name_en" class="block text-sm font-medium text-gray-700 mb-1">اسم المنتج إنجليزي</label>
+                        <input type="text" name="name_en" id="name_en" value="{{ old('name_en', $product->name_en) }}"
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        @error('name_en')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="short_description_ar" class="block text-sm font-medium text-gray-700 mb-1">الوصف المختصر عربي</label>
+                        <textarea name="short_description_ar" id="short_description_ar" rows="2"
+                                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">{{ old('short_description_ar', $product->short_description_ar) }}</textarea>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label for="short_description_en" class="block text-sm font-medium text-gray-700 mb-1">الوصف المختصر إنجليزي</label>
+                        <textarea name="short_description_en" id="short_description_en" rows="2"
+                                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">{{ old('short_description_en', $product->short_description_en) }}</textarea>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label for="description_ar" class="block text-sm font-medium text-gray-700 mb-1">الوصف الكامل عربي</label>
+                        <textarea name="description_ar" id="description_ar" rows="4"
+                                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">{{ old('description_ar', $product->description_ar) }}</textarea>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label for="description_en" class="block text-sm font-medium text-gray-700 mb-1">الوصف الكامل إنجليزي</label>
+                        <textarea name="description_en" id="description_en" rows="4"
+                                  class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">{{ old('description_en', $product->description_en) }}</textarea>
+                    </div>
+                </div>
             </div>
+        </div>
 
-            {{-- ===== Tab: Basic Info ===== --}}
-            <div x-show="tab === 'basic'" class="p-6 space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-
-                    {{-- Name AR --}}
-                    <div>
-                        <label for="name_ar" class="block text-sm font-medium text-gray-700 mb-1.5">اسم المنتج (عربي) <span class="text-red-500">*</span></label>
-                        <input type="text" name="name_ar" id="name_ar"
-                               value="{{ old('name_ar', $product->name_ar) }}" required
-                               class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="أدخل اسم المنتج بالعربية">
-                        @error('name_ar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+        <!-- Data Tab -->
+        <div x-show="activeTab === 'data'" class="space-y-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">التصنيف والنوع</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label for="product_type" class="block text-sm font-medium text-gray-700 mb-1">نوع المنتج *</label>
+                        <select name="product_type" id="product_type" x-model="productType" required
+                                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                            <option value="simple">منتج بسيط</option>
+                            <option value="variable">منتج متغير</option>
+                        </select>
                     </div>
 
-                    {{-- Name EN --}}
                     <div>
-                        <label for="name_en" class="block text-sm font-medium text-gray-700 mb-1.5">اسم المنتج (إنجليزي)</label>
-                        <input type="text" name="name_en" id="name_en"
-                               value="{{ old('name_en', $product->name_en) }}"
-                               class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="Product name in English">
-                        @error('name_en')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                    </div>
-
-                    {{-- Category --}}
-                    <div>
-                        <label for="category_id" class="block text-sm font-medium text-gray-700 mb-1.5">التصنيف <span class="text-red-500">*</span></label>
+                        <label for="category_id" class="block text-sm font-medium text-gray-700 mb-1">التصنيف *</label>
                         <select name="category_id" id="category_id" required
-                                class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">— اختر التصنيف —</option>
-                            @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}" {{ old('category_id', $product->category_id) == $cat->id ? 'selected' : '' }}>
-                                    {{ $cat->name_ar ?? $cat->name }}
+                                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                            <option value="">اختر التصنيف</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}" {{ old('category_id', $product->category_id) == $category->id ? 'selected' : '' }}>
+                                    {{ $category->name_ar ?: $category->name_en }}
                                 </option>
                             @endforeach
                         </select>
-                        @error('category_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
-
-                    {{-- Brand --}}
+                    
                     <div>
-                        <label for="brand_id" class="block text-sm font-medium text-gray-700 mb-1.5">العلامة التجارية</label>
+                        <label for="brand_id" class="block text-sm font-medium text-gray-700 mb-1">العلامة التجارية</label>
                         <select name="brand_id" id="brand_id"
-                                class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">— بدون —</option>
+                                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                            <option value="">اختر العلامة التجارية</option>
                             @foreach($brands as $brand)
                                 <option value="{{ $brand->id }}" {{ old('brand_id', $product->brand_id) == $brand->id ? 'selected' : '' }}>
-                                    {{ $brand->name_ar ?? $brand->name }}
+                                    {{ $brand->name_ar ?: $brand->name_en ?: $brand->name }}
                                 </option>
                             @endforeach
                         </select>
-                        @error('brand_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
 
-                    {{-- SKU --}}
-                    <div>
-                        <label for="sku" class="block text-sm font-medium text-gray-700 mb-1.5">رمز SKU</label>
-                        <input type="text" name="sku" id="sku"
-                               value="{{ old('sku', $product->sku) }}"
-                               class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="PRD-001">
-                        @error('sku')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                    </div>
-
-                    {{-- Stock --}}
-                    <div>
-                        <label for="stock_quantity" class="block text-sm font-medium text-gray-700 mb-1.5">الكمية المتاحة <span class="text-red-500">*</span></label>
-                        <input type="number" name="stock_quantity" id="stock_quantity" min="0" required
-                               value="{{ old('stock_quantity', $product->stock_quantity) }}"
-                               class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        @error('stock_quantity')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                    </div>
-
-                </div>
-
-                {{-- Regional Pricing --}}
-                <div class="border border-gray-200 rounded-xl p-5 bg-gray-50/50">
-                    <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                        <i class="fas fa-map-marker-alt text-indigo-600"></i>
-                        أسعار حسب الموقع الجغرافي
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                        {{-- Price Inside Assiut --}}
-                        <div>
-                            <label for="price_inside_assiut" class="block text-sm font-medium text-gray-700 mb-1.5">
-                                <i class="fas fa-city text-green-600 text-xs ml-1"></i> السعر داخل أسيوط <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="number" name="price_inside_assiut" id="price_inside_assiut" step="0.01" min="0" required
-                                       value="{{ old('price_inside_assiut', $product->price_inside_assiut) }}"
-                                       class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 pl-14">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">ج.م</span>
-                            </div>
-                            @error('price_inside_assiut')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                        </div>
-
-                        {{-- Price Outside Assiut --}}
-                        <div>
-                            <label for="price_outside_assiut" class="block text-sm font-medium text-gray-700 mb-1.5">
-                                <i class="fas fa-globe-africa text-blue-600 text-xs ml-1"></i> السعر خارج أسيوط <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="number" name="price_outside_assiut" id="price_outside_assiut" step="0.01" min="0" required
-                                       value="{{ old('price_outside_assiut', $product->price_outside_assiut) }}"
-                                       class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 pl-14">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">ج.م</span>
-                            </div>
-                            @error('price_outside_assiut')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                        </div>
-
-                        {{-- Sale Price Inside Assiut --}}
-                        <div>
-                            <label for="sale_price_inside_assiut" class="block text-sm font-medium text-gray-700 mb-1.5">
-                                <i class="fas fa-city text-green-600 text-xs ml-1"></i> سعر التخفيض داخل أسيوط
-                            </label>
-                            <div class="relative">
-                                <input type="number" name="sale_price_inside_assiut" id="sale_price_inside_assiut" step="0.01" min="0"
-                                       value="{{ old('sale_price_inside_assiut', $product->sale_price_inside_assiut) }}"
-                                       class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 pl-14"
-                                       placeholder="فارغ = بدون تخفيض">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">ج.م</span>
-                            </div>
-                            @error('sale_price_inside_assiut')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                        </div>
-
-                        {{-- Sale Price Outside Assiut --}}
-                        <div>
-                            <label for="sale_price_outside_assiut" class="block text-sm font-medium text-gray-700 mb-1.5">
-                                <i class="fas fa-globe-africa text-blue-600 text-xs ml-1"></i> سعر التخفيض خارج أسيوط
-                            </label>
-                            <div class="relative">
-                                <input type="number" name="sale_price_outside_assiut" id="sale_price_outside_assiut" step="0.01" min="0"
-                                       value="{{ old('sale_price_outside_assiut', $product->sale_price_outside_assiut) }}"
-                                       class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 pl-14"
-                                       placeholder="فارغ = بدون تخفيض">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">ج.م</span>
-                            </div>
-                            @error('sale_price_outside_assiut')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- ===== Tab: Details ===== --}}
-            <div x-show="tab === 'details'" x-cloak class="p-6 space-y-5">
-                <div>
-                    <label for="short_description_ar" class="block text-sm font-medium text-gray-700 mb-1.5">وصف مختصر (عربي)</label>
-                    <textarea name="short_description_ar" id="short_description_ar" rows="3"
-                              class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                              placeholder="وصف قصير يظهر في قوائم المنتجات">{{ old('short_description_ar', $product->short_description_ar) }}</textarea>
-                    @error('short_description_ar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
-
-                <div>
-                    <label for="short_description_en" class="block text-sm font-medium text-gray-700 mb-1.5">وصف مختصر (إنجليزي)</label>
-                    <textarea name="short_description_en" id="short_description_en" rows="3"
-                              class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                              placeholder="Short description shown in listings">{{ old('short_description_en', $product->short_description_en) }}</textarea>
-                    @error('short_description_en')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
-
-                <hr class="border-gray-200">
-
-                <div>
-                    <label for="description_ar" class="block text-sm font-medium text-gray-700 mb-1.5">الوصف الكامل (عربي)</label>
-                    <textarea name="description_ar" id="description_ar" rows="6"
-                              class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                              placeholder="وصف تفصيلي كامل للمنتج">{{ old('description_ar', $product->description_ar) }}</textarea>
-                    @error('description_ar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
-
-                <div>
-                    <label for="description_en" class="block text-sm font-medium text-gray-700 mb-1.5">الوصف الكامل (إنجليزي)</label>
-                    <textarea name="description_en" id="description_en" rows="6"
-                              class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                              placeholder="Full detailed product description">{{ old('description_en', $product->description_en) }}</textarea>
-                    @error('description_en')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
-            </div>
-
-            {{-- ===== Tab: Images ===== --}}
-            <div x-show="tab === 'images'" x-cloak class="p-6 space-y-6">
-
-                {{-- Current images --}}
-                @if($product->images->count() > 0)
-                    <div>
-                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            <i class="fas fa-image text-indigo-600"></i>
-                            الصور الحالية
-                        </h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                            @foreach($product->images as $image)
-                                <div class="relative group rounded-xl overflow-hidden bg-gray-100 aspect-square border border-gray-200">
-                                    <img src="{{ asset('storage/' . $image->path) }}"
-                                         alt="{{ $product->name_ar }}"
-                                         class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
-
-                                    @if($loop->first)
-                                        <span class="absolute top-2 right-2 px-2 py-0.5 bg-green-600 text-white text-[10px] font-bold rounded-full shadow">
-                                            <i class="fas fa-star ml-0.5"></i> رئيسية
-                                        </span>
-                                    @endif
-
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-3">
-                                        <form action="{{ route('admin.products.delete-image', [$product, $image]) }}"
-                                              method="POST"
-                                              onsubmit="return confirm('هل تريد حذف هذه الصورة؟')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                    class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg transition-colors flex items-center gap-1.5 shadow-lg">
-                                                <i class="fas fa-trash-alt"></i>
-                                                حذف
-                                            </button>
-                                        </form>
+                    <!-- Tags Section -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                        @if(isset($tagGroups) && $tagGroups->count())
+                            <div class="space-y-4 border rounded-lg p-4 bg-gray-50">
+                                @foreach($tagGroups as $group)
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-500 uppercase mb-2">{{ $group->name_ar ?: $group->name_en }}</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            @foreach($group->options as $opt)
+                                                <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-300 bg-white text-sm cursor-pointer hover:border-indigo-400">
+                                                    <input type="checkbox" name="tag_options[]" value="{{ $opt->id }}"
+                                                           class="rounded text-indigo-600 focus:ring-indigo-500"
+                                                           {{ $product->tagOptions->contains($opt->id) ? 'checked' : '' }}>
+                                                    <span class="text-gray-700">{{ $opt->name_ar ?: $opt->name_en }}</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
                                     </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm text-gray-500">لا توجد Tags متاحة.</p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">السعر والمخزون</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="price" class="block text-sm font-medium text-gray-700 mb-1">السعر الأساسي *</label>
+                        <input type="number" name="price" id="price" value="{{ old('price', $product->price) }}" step="0.01" min="0" required
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label for="sale_price" class="block text-sm font-medium text-gray-700 mb-1">سعر التخفيض</label>
+                        <input type="number" name="sale_price" id="sale_price" value="{{ old('sale_price', $product->sale_price) }}" step="0.01" min="0"
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label for="stock_quantity" class="block text-sm font-medium text-gray-700 mb-1">الكمية المتاحة *</label>
+                        <input type="number" name="stock_quantity" id="stock_quantity" value="{{ old('stock_quantity', $product->stock_quantity) }}" min="0" required
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label for="sku" class="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                        <input type="text" name="sku" id="sku" value="{{ old('sku', $product->sku) }}"
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label for="low_stock_threshold" class="block text-sm font-medium text-gray-700 mb-1">حد التنبيه للكمية المنخفضة</label>
+                        <input type="number" name="low_stock_threshold" id="low_stock_threshold" value="{{ old('low_stock_threshold', $product->low_stock_threshold ?? 5) }}" min="0"
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">الإعدادات</h3>
+                <div class="flex items-center gap-6">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" name="is_active" value="1" {{ old('is_active', $product->is_active) ? 'checked' : '' }}
+                               class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <span class="mr-2 text-sm text-gray-700">نشط</span>
+                    </label>
+                    
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" name="is_featured" value="1" {{ old('is_featured', $product->is_featured) ? 'checked' : '' }}
+                               class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <span class="mr-2 text-sm text-gray-700">مميز</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Media Tab -->
+        <div x-show="activeTab === 'media'" class="space-y-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">صور المنتج</h3>
+                
+                <!-- Existing Images -->
+                @if($product->images->count() > 0)
+                    <div class="mb-6">
+                        <p class="text-sm font-medium text-gray-700 mb-3">الصور الحالية</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            @foreach($product->images->sortBy('sort_order') as $image)
+                                <div class="relative group rounded-lg overflow-hidden border border-gray-200">
+                                    <img src="{{ asset('storage/' . $image->path) }}" class="w-full h-32 object-cover">
+                                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                        <button type="submit" form="delete-image-{{ $image->id }}" 
+                                                class="bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition"
+                                                onclick="return confirm('هل أنت متأكد من حذف هذه الصورة؟')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    @if($image->is_primary)
+                                        <span class="absolute top-1 right-1 bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded-full">رئيسية</span>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>
                     </div>
-                    <hr class="border-gray-200">
                 @endif
 
-                {{-- Upload area --}}
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                        <i class="fas fa-cloud-upload-alt text-indigo-600"></i>
-                        إضافة صور جديدة
-                    </h4>
-                    <label for="images"
-                           class="group border-2 border-dashed border-gray-300 rounded-xl p-10 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:border-indigo-400 hover:bg-indigo-50/50 bg-gray-50">
-                        <input type="file" name="images[]" id="images" multiple accept="image/*" class="hidden">
-                        <div class="w-14 h-14 rounded-full bg-indigo-100 group-hover:bg-indigo-200 transition-colors flex items-center justify-center">
-                            <i class="fas fa-cloud-upload-alt text-2xl text-indigo-600"></i>
-                        </div>
-                        <p class="text-gray-700 font-medium">اسحب الصور هنا أو انقر للاختيار</p>
-                        <p class="text-xs text-gray-400">PNG, JPG, GIF, WebP — حتى 2MB لكل صورة</p>
-                    </label>
-                </div>
-            </div>
-
-            {{-- ===== Tab: Settings ===== --}}
-            <div x-show="tab === 'settings'" x-cloak class="p-6 space-y-6">
-
-                {{-- Toggles --}}
-                <div class="space-y-3">
-                    <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                        <i class="fas fa-toggle-on text-indigo-600"></i>
-                        حالة المنتج
-                    </h4>
-
-                    <label class="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 cursor-pointer hover:border-green-300 transition-colors group">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-lg bg-green-100 group-hover:bg-green-200 transition-colors flex items-center justify-center">
-                                <i class="fas fa-eye text-green-600 text-sm"></i>
+                <!-- New Images Upload -->
+                <div x-data="imageUpload()" class="space-y-4">
+                    <label class="block text-sm font-medium text-gray-700">إضافة صور جديدة</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-right hover:border-indigo-500 transition cursor-pointer"
+                         @click="$refs.fileInput.click()"
+                         @dragover.prevent="dragover = true"
+                         @dragleave.prevent="dragover = false"
+                         @drop.prevent="handleDrop($event)"
+                         :class="{ 'border-indigo-500 bg-indigo-50': dragover }">
+                        <input type="file" name="images[]" multiple accept="image/*" x-ref="fileInput" @change="handleFiles($event)" class="hidden">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                        <p class="text-gray-600">اسحب الصور هنا أو انقر للاختيار</p>
+                        <p class="text-sm text-gray-400 mt-1">PNG, JPG, GIF حتى 2MB</p>
+                    </div>
+                    
+                    <div x-show="previews.length > 0" class="grid grid-cols-4 gap-4">
+                        <template x-for="(preview, index) in previews" :key="index">
+                            <div class="relative">
+                                <img :src="preview" class="w-full h-24 object-cover rounded-lg">
+                                <button type="button" @click="removeImage(index)" 
+                                        class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                                    &times;
+                                </button>
                             </div>
-                            <div>
-                                <p class="font-medium text-gray-800 text-sm">نشط ومرئي</p>
-                                <p class="text-xs text-gray-500">يظهر في المتجر للعملاء</p>
-                            </div>
-                        </div>
-                        <input type="checkbox" name="is_active" value="1"
-                               {{ old('is_active', $product->is_active) ? 'checked' : '' }}
-                               class="w-5 h-5 rounded text-green-600 border-gray-300 focus:ring-green-500 cursor-pointer">
-                    </label>
-
-                    <label class="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 cursor-pointer hover:border-yellow-300 transition-colors group">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-lg bg-yellow-100 group-hover:bg-yellow-200 transition-colors flex items-center justify-center">
-                                <i class="fas fa-star text-yellow-600 text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-800 text-sm">منتج مميز</p>
-                                <p class="text-xs text-gray-500">يظهر في قسم المنتجات المميزة</p>
-                            </div>
-                        </div>
-                        <input type="checkbox" name="is_featured" value="1"
-                               {{ old('is_featured', $product->is_featured) ? 'checked' : '' }}
-                               class="w-5 h-5 rounded text-yellow-500 border-gray-300 focus:ring-yellow-500 cursor-pointer">
-                    </label>
-                </div>
-
-                {{-- Stock info --}}
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                        <i class="fas fa-boxes text-indigo-600"></i>
-                        حالة المخزون
-                    </h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        @php
-                            $statusMap = [
-                                'in_stock'    => ['label' => 'متوفر',       'color' => 'green',  'icon' => 'check-circle'],
-                                'low_stock'   => ['label' => 'مخزون منخفض', 'color' => 'yellow', 'icon' => 'exclamation-triangle'],
-                                'out_of_stock'=> ['label' => 'غير متوفر',  'color' => 'red',    'icon' => 'times-circle'],
-                            ];
-                            $st = $statusMap[$product->stock_status] ?? $statusMap['out_of_stock'];
-                        @endphp
-                        <div class="p-4 rounded-xl border-r-4 border-{{ $st['color'] }}-500 bg-{{ $st['color'] }}-50">
-                            <p class="text-xs text-gray-500 mb-1">الحالة</p>
-                            <p class="font-bold text-{{ $st['color'] }}-700 flex items-center gap-1">
-                                <i class="fas fa-{{ $st['icon'] }}"></i>
-                                {{ $st['label'] }}
-                            </p>
-                        </div>
-                        <div class="p-4 rounded-xl bg-gray-50">
-                            <p class="text-xs text-gray-500 mb-1">الكمية</p>
-                            <p class="font-bold text-gray-800">{{ $product->stock_quantity }} وحدة</p>
-                        </div>
-                        <div class="p-4 rounded-xl bg-gray-50">
-                            <p class="text-xs text-gray-500 mb-1">حدّ التنبيه</p>
-                            <p class="font-bold text-gray-800">{{ $product->low_stock_threshold ?? 5 }} وحدة</p>
-                        </div>
+                        </template>
                     </div>
                 </div>
             </div>
-        </div>
-
-        {{-- ===== Sticky Action Bar ===== --}}
-        <div class="sticky bottom-4 z-20">
-            <div class="bg-white rounded-xl shadow-xl ring-1 ring-gray-200 px-6 py-4 flex items-center justify-between gap-4">
-                <p class="hidden sm:flex items-center gap-2 text-sm text-gray-500">
-                    <i class="fas fa-info-circle text-indigo-500"></i>
-                    تذكّر حفظ التغييرات قبل المغادرة
-                </p>
-
-                <div class="flex items-center gap-3 w-full sm:w-auto">
-                    <a href="{{ route('admin.products.index') }}"
-                       class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-colors text-sm font-medium">
-                        <i class="fas fa-arrow-right"></i>
-                        <span>رجوع</span>
-                    </a>
-
-                    <button type="submit"
-                            :disabled="loading"
-                            class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-7 py-2.5 rounded-lg text-white text-sm font-medium shadow-lg transition-all
-                                   bg-gradient-to-l from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-60 disabled:cursor-not-allowed">
-                        <template x-if="!loading">
-                            <i class="fas fa-save"></i>
-                        </template>
-                        <template x-if="loading">
-                            <i class="fas fa-spinner fa-spin"></i>
-                        </template>
-                        <span x-text="loading ? 'جاري الحفظ...' : 'حفظ التعديلات'"></span>
-                    </button>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">فيديو المنتج</h3>
+                <div>
+                    <label for="video" class="block text-sm font-medium text-gray-700 mb-1">رفع فيديو جديد</label>
+                    <input type="file" name="video" id="video" accept="video/mp4,video/webm,video/ogg"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                    <p class="text-xs text-gray-500 mt-1">الحد الأقصى 10MB، يفضل MP4 قصير</p>
                 </div>
             </div>
         </div>
+
+        <!-- Variants Tab (INSIDE the form to keep Alpine scope) -->
+        <div x-show="activeTab === 'variants'" class="space-y-6">
+            <div class="bg-white rounded-lg shadow p-6" id="variants-section">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">متغيرات المنتج</h3>
+                    <button type="button" id="btn-add-variant"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
+                        <i class="fas fa-plus"></i> إضافة متغير
+                    </button>
+                </div>
+
+                @php
+                    $attrs = $attributes->filter(fn($a) => $a->is_active)->values();
+                @endphp
+
+                @if($attrs->isEmpty())
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                        لا توجد خصائص نشطة. يمكنك إنشاء خصائص من قسم "خصائص المنتجات".
+                    </div>
+                @else
+
+                <!-- Existing Variants List -->
+                <div id="variants-list" class="space-y-3 mb-4">
+                    @forelse($product->variants as $variant)
+                    <div class="variant-row rounded-xl border border-gray-200" data-id="{{ $variant->id }}">
+                        <div class="px-4 py-3 bg-gray-50 flex items-center justify-between rounded-t-xl">
+                            <div class="text-sm font-medium text-gray-700">
+                                @foreach($variant->attributeValues as $av)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-indigo-100 text-indigo-800 ml-1">
+                                        {{ $av->attribute->name_ar ?? $av->attribute->name ?? '' }}: {{ $av->value }}
+                                    </span>
+                                @endforeach
+                                @if($variant->sku)
+                                    <span class="text-gray-400 text-xs mr-2">SKU: {{ $variant->sku }}</span>
+                                @endif
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" class="btn-edit-variant text-indigo-600 hover:text-indigo-700 text-sm"
+                                        data-id="{{ $variant->id }}"
+                                        data-sku="{{ $variant->sku }}"
+                                        data-price="{{ $variant->price }}"
+                                        data-sale_price="{{ $variant->sale_price }}"
+                                        data-stock="{{ $variant->stock_quantity }}"
+                                        data-is_active="{{ $variant->is_active ? '1' : '0' }}"
+                                        data-image="{{ $variant->image ? asset('storage/'.$variant->image) : '' }}"
+                                        data-image-raw="{{ $variant->image ?? '' }}"
+                                        data-attributes='{{ json_encode($variant->attributeValues->mapWithKeys(fn($av) => [$av->product_attribute_id => $av->value])) }}'>
+                                    <i class="fas fa-edit ml-1"></i> تعديل
+                                </button>
+                                <button type="button" class="btn-delete-variant text-red-600 hover:text-red-700 text-sm"
+                                        data-id="{{ $variant->id }}">
+                                    <i class="fas fa-trash ml-1"></i> حذف
+                                </button>
+                            </div>
+                        </div>
+                        <div class="px-4 py-2 grid grid-cols-4 gap-4 text-sm text-gray-600">
+                            @if($variant->image)
+                            <div>
+                                <img src="{{ asset('storage/'.$variant->image) }}" class="w-12 h-12 object-cover rounded-lg border border-gray-200">
+                            </div>
+                            @endif
+                            <div>السعر: <strong>{{ $variant->price ? number_format($variant->price, 2) : '—' }}</strong></div>
+                            <div>المخزون: <strong class="{{ $variant->stock_quantity > 0 ? 'text-green-600' : 'text-red-600' }}">{{ $variant->stock_quantity }}</strong></div>
+                            <div>
+                                <span class="px-2 py-0.5 rounded-full text-xs {{ $variant->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                    {{ $variant->is_active ? 'نشط' : 'معطّل' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                    <div id="no-variants-msg" class="border border-dashed border-gray-300 rounded-xl p-6 text-center text-gray-500">
+                        لا توجد متغيرات بعد. اضغط "إضافة متغير".
+                    </div>
+                    @endforelse
+                </div>
+
+                <!-- Add/Edit Variant Form (hidden by default) -->
+                <div id="variant-form-container" class="hidden rounded-xl border-2 border-indigo-200 bg-indigo-50 p-5">
+                    <h4 class="font-semibold text-gray-800 mb-4" id="variant-form-title">إضافة متغير جديد</h4>
+                    <input type="hidden" id="variant-id" value="">
+                    <input type="hidden" id="variant-existing-image" value="">
+
+                    <!-- Variant Image -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">صورة المتغير (اختياري)</label>
+                        <div class="flex items-start gap-4">
+                            <div id="v-image-preview-wrap" class="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50 flex-shrink-0 cursor-pointer select-none">
+                                <img id="v-image-preview" src="" alt="" class="hidden w-full h-full object-cover rounded-xl">
+                                <i id="v-image-placeholder" class="fas fa-image text-gray-300 text-3xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <input type="file" id="v-image" accept="image/*" class="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 cursor-pointer">
+                                <p class="text-xs text-gray-400 mt-1">PNG, JPG, WEBP حتى 2MB</p>
+                                <button type="button" id="btn-remove-variant-image" class="hidden mt-2 text-xs text-red-500 hover:text-red-700">
+                                    <i class="fas fa-times ml-1"></i>حذف الصورة
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                            <input type="text" id="v-sku" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="اختياري">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">السعر *</label>
+                            <input type="number" id="v-price" step="0.01" min="0" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">سعر التخفيض</label>
+                            <input type="number" id="v-sale-price" step="0.01" min="0" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="اختياري">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">الكمية *</label>
+                            <input type="number" id="v-stock" min="0" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="0" value="0">
+                        </div>
+                        <div class="flex items-end">
+                            <label class="flex items-center cursor-pointer gap-2">
+                                <input type="checkbox" id="v-is-active" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked>
+                                <span class="text-sm text-gray-700">نشط</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <p class="text-sm font-medium text-gray-700 mb-2">الخصائص *</p>
+                        <div class="grid grid-cols-1 md:grid-cols-{{ max(1, min(3, $attrs->count())) }} gap-3" id="variant-attributes-fields">
+                            @foreach($attrs as $attr)
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $attr->name_ar ?? $attr->name }}</label>
+                                @php $options = is_array($attr->options) ? $attr->options : []; @endphp
+                                @if(!empty($options))
+                                <select class="v-attr w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                        data-attr-id="{{ $attr->id }}">
+                                    <option value="">— اختر —</option>
+                                    @foreach($options as $opt)
+                                    <option value="{{ $opt }}">{{ $opt }}</option>
+                                    @endforeach
+                                </select>
+                                @else
+                                <input type="text" class="v-attr w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                       data-attr-id="{{ $attr->id }}" placeholder="أدخل قيمة">
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div id="variant-form-error" class="hidden mb-3 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg"></div>
+
+                    <div class="flex items-center gap-3">
+                        <button type="button" id="btn-save-variant"
+                                class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">
+                            <i class="fas fa-save ml-1"></i> حفظ المتغير
+                        </button>
+                        <button type="button" id="btn-cancel-variant"
+                                class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm">
+                            إلغاء
+                        </button>
+                    </div>
+                </div>
+
+                @endif
+            </div>
+
+            <!-- Reviews Tab -->
+            <div x-show="activeTab === 'reviews'" class="space-y-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">مراجعات العملاء</h3>
+                    
+                    @if($product->approvedReviews()->count() > 0)
+                    <div class="space-y-4">
+                        @foreach($product->approvedReviews()->with('user')->get() as $review)
+                        <div class="border rounded-lg p-4 {{ $review->is_approved ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200' }}">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="font-medium text-gray-900">{{ $review->user->name }}</span>
+                                        <div class="flex">
+                                            @for($i = 1; $i <= 5; $i++)
+                                            <i class="fas fa-star {{ $i <= $review->rating ? 'text-yellow-400' : 'text-gray-300' }} text-sm"></i>
+                                            @endfor
+                                        </div>
+                                        <span class="text-xs text-gray-500">{{ $review->created_at->format('Y-m-d H:i') }}</span>
+                                    </div>
+                                    @if($review->comment)
+                                    <p class="text-gray-700 text-sm">{{ $review->comment }}</p>
+                                    @endif
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    @if($review->is_approved)
+                                    <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">موافق</span>
+                                    @else
+                                    <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">في انتظار الموافقة</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-star text-4xl mb-3"></i>
+                        <p>لا توجد مراجعات لهذا المنتج بعد</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="mt-8 flex items-center gap-4 border-t pt-6">
+            <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
+                <i class="fas fa-save ml-2"></i> حفظ التغييرات
+            </button>
+            <a href="{{ route('admin.products.index') }}" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition">
+                إلغاء
+            </a>
+        </div>
     </form>
+
 </div>
+
+<!-- Hidden forms for image deletion -->
+@foreach($product->images as $image)
+    <form id="delete-image-{{ $image->id }}" action="{{ route('admin.products.delete-image', ['product' => $product->id, 'image' => $image->id]) }}" method="POST" class="hidden">
+        @csrf
+        @method('DELETE')
+    </form>
+@endforeach
+
+@push('scripts')
+<script>
+function imageUpload() {
+    return {
+        dragover: false,
+        previews: [],
+        files: [],
+        handleFiles(event) {
+            this.addFiles(Array.from(event.target.files));
+        },
+        handleDrop(event) {
+            this.dragover = false;
+            this.addFiles(Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+        },
+        addFiles(newFiles) {
+            newFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => { this.previews.push(e.target.result); };
+                reader.readAsDataURL(file);
+                this.files.push(file);
+            });
+            this.syncInputFiles();
+        },
+        removeImage(index) {
+            this.previews.splice(index, 1);
+            this.files.splice(index, 1);
+            this.syncInputFiles();
+        },
+        syncInputFiles() {
+            if (!this.$refs.fileInput) return;
+            const dt = new DataTransfer();
+            this.files.forEach(f => dt.items.add(f));
+            this.$refs.fileInput.files = dt.files;
+        }
+    }
+}
+
+// ========== Variants CRUD ==========
+(function () {
+    const productId = Number('{{ $product->id }}');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const baseUrl = `/admin/products/${productId}/variants`;
+
+    const formContainer = document.getElementById('variant-form-container');
+    const formTitle     = document.getElementById('variant-form-title');
+    const variantIdEl   = document.getElementById('variant-id');
+    const skuEl         = document.getElementById('v-sku');
+    const priceEl       = document.getElementById('v-price');
+    const salePriceEl   = document.getElementById('v-sale-price');
+    const stockEl       = document.getElementById('v-stock');
+    const isActiveEl    = document.getElementById('v-is-active');
+    const errorBox      = document.getElementById('variant-form-error');
+    const list          = document.getElementById('variants-list');
+
+    function showError(msg) {
+        errorBox.textContent = msg;
+        errorBox.classList.remove('hidden');
+    }
+    function hideError() { errorBox.classList.add('hidden'); }
+
+    const imageEl          = document.getElementById('v-image');
+    const imagePreview     = document.getElementById('v-image-preview');
+    const imagePlaceholder = document.getElementById('v-image-placeholder');
+    const removeImageBtn   = document.getElementById('btn-remove-variant-image');
+    const existingImageEl  = document.getElementById('variant-existing-image');
+    const imageDropzone    = document.getElementById('v-image-preview-wrap');
+
+    function setFileToInput(file) {
+        if (!file || !imageEl) return;
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        imageEl.files = dt.files;
+        imageEl.dispatchEvent(new Event('change'));
+    }
+
+    function setDropzoneActive(isActive) {
+        if (!imageDropzone) return;
+        imageDropzone.classList.toggle('border-indigo-400', isActive);
+        imageDropzone.classList.toggle('bg-indigo-50', isActive);
+    }
+
+    // Dropzone click-to-upload
+    imageDropzone?.addEventListener('click', () => imageEl?.click());
+
+    // Drag & Drop
+    imageDropzone?.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        setDropzoneActive(true);
+    });
+    imageDropzone?.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        setDropzoneActive(false);
+    });
+    imageDropzone?.addEventListener('dragend', (e) => {
+        e.preventDefault();
+        setDropzoneActive(false);
+    });
+    imageDropzone?.addEventListener('drop', (e) => {
+        e.preventDefault();
+        setDropzoneActive(false);
+        const file = e.dataTransfer?.files?.[0];
+        if (file && file.type && file.type.startsWith('image/')) {
+            setFileToInput(file);
+        }
+    });
+
+    // Image preview
+    imageEl?.addEventListener('change', () => {
+        const file = imageEl.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            imagePreview.src = e.target.result;
+            imagePreview.classList.remove('hidden');
+            imagePlaceholder.classList.add('hidden');
+            removeImageBtn.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Remove image
+    removeImageBtn?.addEventListener('click', () => {
+        imageEl.value = '';
+        imagePreview.src = '';
+        imagePreview.classList.add('hidden');
+        imagePlaceholder.classList.remove('hidden');
+        removeImageBtn.classList.add('hidden');
+        existingImageEl.value = '';
+    });
+
+    function setImagePreview(url, raw) {
+        existingImageEl.value = raw || '';
+        if (url) {
+            imagePreview.src = url;
+            imagePreview.classList.remove('hidden');
+            imagePlaceholder.classList.add('hidden');
+            removeImageBtn.classList.remove('hidden');
+        } else {
+            imagePreview.src = '';
+            imagePreview.classList.add('hidden');
+            imagePlaceholder.classList.remove('hidden');
+            removeImageBtn.classList.add('hidden');
+        }
+    }
+
+    function resetForm() {
+        variantIdEl.value = '';
+        skuEl.value = '';
+        priceEl.value = '';
+        salePriceEl.value = '';
+        stockEl.value = 0;
+        isActiveEl.checked = true;
+        imageEl.value = '';
+        setImagePreview('', '');
+        document.querySelectorAll('.v-attr').forEach(el => el.value = '');
+        hideError();
+        formTitle.textContent = 'إضافة متغير جديد';
+    }
+
+    function openForm() {
+        formContainer.classList.remove('hidden');
+        formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Add variant button
+    document.getElementById('btn-add-variant')?.addEventListener('click', () => {
+        resetForm();
+        openForm();
+    });
+
+    // Cancel button
+    document.getElementById('btn-cancel-variant')?.addEventListener('click', () => {
+        formContainer.classList.add('hidden');
+        resetForm();
+    });
+
+    // Edit variant buttons (delegated)
+    document.addEventListener('click', function (e) {
+        const editBtn = e.target.closest('.btn-edit-variant');
+        if (!editBtn) return;
+        const d = editBtn.dataset;
+        variantIdEl.value = d.id;
+        skuEl.value = d.sku || '';
+        priceEl.value = d.price || '';
+        salePriceEl.value = d.sale_price || '';
+        stockEl.value = d.stock || 0;
+        isActiveEl.checked = d.is_active === '1';
+        imageEl.value = '';
+        setImagePreview(d.image || '', d['image-raw'] || '');
+        const attrs = JSON.parse(d.attributes || '{}');
+        document.querySelectorAll('.v-attr').forEach(el => {
+            const attrId = el.dataset.attrId;
+            el.value = attrs[attrId] ?? '';
+        });
+        formTitle.textContent = 'تعديل المتغير';
+        hideError();
+        openForm();
+    });
+
+    // Delete variant buttons (delegated)
+    document.addEventListener('click', async function (e) {
+        const delBtn = e.target.closest('.btn-delete-variant');
+        if (!delBtn) return;
+        if (!confirm('هل أنت متأكد من حذف هذا المتغير؟')) return;
+        const id = delBtn.dataset.id;
+        try {
+            const res = await fetch(`${baseUrl}/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                const row = document.querySelector(`.variant-row[data-id="${id}"]`);
+                row?.remove();
+                if (!list.querySelector('.variant-row')) {
+                    list.innerHTML = '<div id="no-variants-msg" class="border border-dashed border-gray-300 rounded-xl p-6 text-center text-gray-500">لا توجد متغيرات بعد. اضغط "إضافة متغير".</div>';
+                }
+            } else {
+                alert('حدث خطأ أثناء الحذف');
+            }
+        } catch (err) {
+            alert('حدث خطأ في الاتصال');
+        }
+    });
+
+    // Save variant
+    document.getElementById('btn-save-variant')?.addEventListener('click', async () => {
+        hideError();
+        const id = variantIdEl.value;
+        const attributes = {};
+        document.querySelectorAll('.v-attr').forEach(el => {
+            if (el.value.trim()) attributes[el.dataset.attrId] = el.value.trim();
+        });
+
+        if (!priceEl.value) { showError('السعر مطلوب'); return; }
+        if (Object.keys(attributes).length === 0) { showError('يجب اختيار خاصية واحدة على الأقل'); return; }
+
+        // Use FormData to support file upload
+        const fd = new FormData();
+        fd.append('sku', skuEl.value || '');
+        fd.append('price', priceEl.value);
+        fd.append('sale_price', salePriceEl.value || '');
+        fd.append('stock_quantity', stockEl.value || 0);
+        fd.append('is_active', isActiveEl.checked ? 1 : 0);
+        Object.entries(attributes).forEach(([k, v]) => fd.append(`attributes[${k}]`, v));
+        if (imageEl.files[0]) {
+            fd.append('image', imageEl.files[0]);
+        }
+        // If editing and no new image, keep existing
+        if (id && existingImageEl.value && !imageEl.files[0]) {
+            fd.append('existing_image', existingImageEl.value);
+        }
+
+        const url = id ? `${baseUrl}/${id}` : baseUrl;
+        // PUT doesn't support FormData in some browsers, use POST + _method
+        if (id) fd.append('_method', 'PUT');
+
+        try {
+            const res = await fetch(id ? `${baseUrl}/${id}` : baseUrl, {
+                method: id ? 'POST' : 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: fd
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                window.location.reload();
+            } else {
+                const msgs = data.errors ? Object.values(data.errors).flat().join(', ') : (data.message || 'حدث خطأ');
+                showError(msgs);
+            }
+        } catch (err) {
+            showError('حدث خطأ في الاتصال بالخادم');
+        }
+    });
+})();
+</script>
+@endpush
 @endsection

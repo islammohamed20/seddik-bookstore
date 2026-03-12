@@ -40,9 +40,25 @@
 </div>
 
 <!-- Page Header -->
-<section class="bg-gradient-to-br from-primary-blue to-blue-800 py-10">
-    <div class="container mx-auto px-4">
-        <div class="text-center">
+<section class="relative overflow-hidden py-6 sm:py-10">
+    @if(isset($currentCategory) && ($currentCategory->banner_desktop || $currentCategory->banner_mobile))
+        <!-- Banner Background -->
+        <div class="absolute inset-0 w-full h-full">
+            <img src="{{ asset('storage/' . ($currentCategory->banner_desktop ?? $currentCategory->banner_mobile)) }}" 
+                 alt="{{ $currentCategory->name_ar }}"
+                 class="hidden md:block w-full h-full object-cover">
+            <img src="{{ asset('storage/' . ($currentCategory->banner_mobile ?? $currentCategory->banner_desktop)) }}" 
+                 alt="{{ $currentCategory->name_ar }}"
+                 class="md:hidden w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-r from-black/60 to-black/40"></div>
+        </div>
+    @else
+        <!-- Default Gradient Background -->
+        <div class="absolute inset-0 bg-gradient-to-br from-primary-blue to-blue-800"></div>
+    @endif
+    
+    <div class="container mx-auto px-4 relative z-10">
+        <div class="text-right">
             @if(isset($currentCategory))
                 <div class="inline-flex items-center gap-2 bg-white/20 text-white px-4 py-2 rounded-full text-sm mb-4">
                     <i class="fas fa-folder"></i>
@@ -77,6 +93,43 @@
     </div>
 </section>
 
+@if(isset($categories) && $categories->isNotEmpty())
+<section class="bg-white border-b">
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex gap-2 overflow-x-auto md:overflow-visible md:flex-wrap whitespace-nowrap md:whitespace-normal pb-1 category-scroll">
+            <a href="{{ route('products.index') }}"
+               class="shrink-0 px-3 sm:px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition {{ !isset($currentCategory) ? 'bg-primary-blue text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                كل المنتجات
+            </a>
+            @foreach($categories as $category)
+            <a href="{{ route('products.category', $category->slug) }}"
+               class="shrink-0 px-3 sm:px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition {{ isset($parentCategory) && $parentCategory->id === $category->id ? 'bg-primary-blue text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                {{ $category->name_ar }}
+            </a>
+            @endforeach
+        </div>
+
+        @if(isset($parentCategory) && isset($subcategories) && $subcategories->isNotEmpty())
+        <div class="mt-4 pt-4 border-t border-gray-100">
+            <p class="text-sm font-semibold text-gray-600 mb-3">الأقسام الفرعية داخل {{ $parentCategory->name_ar }}</p>
+            <div class="flex gap-2 overflow-x-auto md:overflow-visible md:flex-wrap whitespace-nowrap md:whitespace-normal pb-1 category-scroll">
+                <a href="{{ route('products.category', $parentCategory->slug) }}"
+                   class="shrink-0 px-3 sm:px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition {{ isset($currentCategory) && $currentCategory->id === $parentCategory->id ? 'bg-primary-blue text-white' : 'bg-blue-50 text-primary-blue hover:bg-blue-100' }}">
+                    الكل
+                </a>
+                @foreach($subcategories as $subcategory)
+                <a href="{{ route('products.category', $subcategory->slug) }}"
+                   class="shrink-0 px-3 sm:px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition {{ isset($currentCategory) && $currentCategory->id === $subcategory->id ? 'bg-primary-blue text-white' : 'bg-blue-50 text-primary-blue hover:bg-blue-100' }}">
+                    {{ $subcategory->name_ar }}
+                </a>
+                @endforeach
+            </div>
+        </div>
+        @endif
+    </div>
+</section>
+@endif
+
 <section class="py-8">
     <div class="container mx-auto px-4">
         <div class="flex flex-col lg:flex-row gap-8">
@@ -90,37 +143,29 @@
                     </h3>
                     
                     <form action="{{ route('products.index') }}" method="GET" id="filterForm">
-                        <!-- Search -->
-                        <div class="mb-6">
-                            <label class="block text-gray-700 font-semibold mb-2 text-sm">بحث</label>
-                            <div class="relative">
-                                <input type="text" 
-                                       name="q" 
-                                       value="{{ $filters['q'] ?? '' }}"
-                                       placeholder="ابحث عن منتج..."
-                                       class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-primary-yellow focus:border-transparent text-sm">
-                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            </div>
-                        </div>
-
-                        <!-- Categories -->
-                        @if(isset($categories) && $categories->isNotEmpty())
-                        <div class="mb-6">
-                            <label class="block text-gray-700 font-semibold mb-2 text-sm">الأقسام</label>
-                            <div class="space-y-2 max-h-48 overflow-y-auto">
-                                @foreach($categories as $category)
-                                <label class="flex items-center gap-2 cursor-pointer group">
-                                    <input type="radio" 
-                                           name="category" 
-                                           value="{{ $category->slug }}"
-                                           {{ ($filters['category'] ?? '') == $category->slug ? 'checked' : '' }}
-                                           class="w-4 h-4 text-primary-blue focus:ring-primary-yellow">
-                                    <span class="text-gray-600 group-hover:text-primary-blue transition text-sm">{{ $category->name_ar }}</span>
-                                </label>
-                                @endforeach
-                            </div>
-                        </div>
+                        <!-- Tags -->
+                        @if(isset($tagGroups) && $tagGroups->isNotEmpty())
+                            @foreach($tagGroups as $tagGroup)
+                                @if($tagGroup->options->isNotEmpty())
+                                <div class="mb-6">
+                                    <label class="block text-gray-700 font-semibold mb-3 text-sm">{{ $tagGroup->name_ar }}</label>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach($tagGroup->options as $tagOption)
+                                        <button type="button" 
+                                                onclick="toggleTag({{ $tagOption->id }})"
+                                                class="tag-btn px-3 py-1.5 rounded-full text-xs font-semibold transition-all {{ !empty($selectedTags) && $selectedTags[0] == $tagOption->id ? 'bg-primary-blue text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}"
+                                                data-tag-id="{{ $tagOption->id }}">
+                                            {{ $tagOption->name_ar }}
+                                        </button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endif
+                            @endforeach
                         @endif
+
+                        <!-- Hidden input for selected tag (single selection) -->
+                        <input type="hidden" name="tags" id="selectedTags" value="{{ !empty($selectedTags) ? $selectedTags[0] : '' }}">
 
                         <!-- Brands -->
                         @if(isset($brands) && $brands->isNotEmpty())
@@ -169,7 +214,7 @@
             <div class="flex-1">
                 @if(isset($notFound) && $notFound)
                     <!-- Not Found State -->
-                    <div class="bg-white rounded-xl shadow-lg p-12 text-center">
+                    <div class="bg-white rounded-xl shadow-lg p-12 text-right">
                         <div class="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <i class="fas fa-search text-4xl text-red-400"></i>
                         </div>
@@ -179,7 +224,7 @@
                         <p class="text-gray-600 mb-8 max-w-md mx-auto">
                             عذراً، لم نتمكن من العثور على ما تبحث عنه. جرب البحث في الأقسام المتاحة أو تصفح جميع المنتجات.
                         </p>
-                        <div class="flex flex-wrap justify-center gap-4">
+                        <div class="flex flex-wrap justify-end gap-4">
                             <a href="{{ route('products.index') }}" class="inline-flex items-center bg-primary-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-blue/90 transition">
                                 <i class="fas fa-store ml-2"></i>
                                 تصفح جميع المنتجات
@@ -192,7 +237,7 @@
                     </div>
                 @elseif($products->isEmpty())
                     <!-- Empty State -->
-                    <div class="bg-white rounded-xl shadow-lg p-12 text-center">
+                    <div class="bg-white rounded-xl shadow-lg p-12 text-right">
                         <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <i class="fas fa-box-open text-4xl text-gray-400"></i>
                         </div>
@@ -212,76 +257,15 @@
                 @else
                     <!-- Results Count -->
                     <div class="flex items-center justify-between mb-6 bg-white rounded-lg px-4 py-3 shadow">
-                        <p class="text-gray-600">
+                        <p class="text-gray-600 text-right">
                             <span class="font-bold text-primary-blue">{{ $products->total() }}</span> منتج
                         </p>
                     </div>
 
                     <!-- Products Grid -->
-                    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
                         @foreach($products as $product)
-                        <article class="bg-white rounded-xl shadow-lg overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                            <a href="{{ route('products.show', $product) }}" class="block relative aspect-square overflow-hidden bg-gray-100">
-                                @if($product->primary_image)
-                                    <img src="{{ $product->primary_image->url }}" 
-                                         alt="{{ $product->name_ar }}"
-                                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                         loading="lazy">
-                                @else
-                                    <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                                        <i class="fas fa-image text-4xl text-gray-300"></i>
-                                    </div>
-                                @endif
-                                
-                                <!-- Badges -->
-                                <div class="absolute top-3 right-3 flex flex-col gap-2">
-                                    @if($product->is_bingo)
-                                        <span class="bg-primary-blue text-white text-xs px-2 py-1 rounded-full font-bold shadow">BINGO</span>
-                                    @endif
-                                    @if($product->sale_price && $product->sale_price < $product->price)
-                                        <span class="bg-primary-red text-white text-xs px-2 py-1 rounded-full font-bold shadow">
-                                            -{{ $product->price > 0 ? number_format((($product->price - $product->sale_price) / $product->price) * 100) : 0 }}%
-                                        </span>
-                                    @endif
-                                </div>
-
-                                @if(!$product->is_available)
-                                    <div class="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                        <span class="bg-white text-gray-800 px-4 py-2 rounded-full font-bold text-sm">نفذت الكمية</span>
-                                    </div>
-                                @endif
-                            </a>
-
-                            <div class="p-4">
-                                @if($product->category)
-                                    <span class="text-xs text-primary-yellow font-semibold">{{ $product->category->name_ar }}</span>
-                                @endif
-
-                                <h3 class="font-bold text-gray-900 mt-1 mb-2 line-clamp-2 min-h-[2.5rem]">
-                                    <a href="{{ route('products.show', $product) }}" class="hover:text-primary-blue transition">
-                                        {{ $product->name_ar ?? $product->name_en }}
-                                    </a>
-                                </h3>
-
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <span class="text-lg font-bold text-primary-blue">{{ number_format($product->final_price, 2) }} ج.م</span>
-                                        @if($product->sale_price && $product->sale_price < $product->price)
-                                            <span class="text-sm text-gray-400 line-through block">{{ number_format($product->price, 2) }} ج.م</span>
-                                        @endif
-                                    </div>
-                                    @if($product->is_available)
-                                        <form method="post" action="{{ route('cart.store', $product) }}">
-                                            @csrf
-                                            <button type="submit"
-                                                    class="w-11 h-11 bg-primary-yellow hover:bg-yellow-400 rounded-full flex items-center justify-center transition transform hover:scale-110 shadow-lg">
-                                                <i class="fas fa-cart-plus text-primary-blue"></i>
-                                            </button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </div>
-                        </article>
+                        <x-storefront.product-card :product="$product" />
                         @endforeach
                     </div>
 
@@ -306,9 +290,49 @@
         overflow: hidden;
         line-clamp: 2;
     }
+
+    .category-scroll {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .category-scroll::-webkit-scrollbar {
+        display: none;
+    }
 </style>
 @endpush
 
 @push('scripts')
+<script>
+    function toggleTag(tagId) {
+        const input = document.getElementById('selectedTags');
+        const currentTag = input.value ? parseInt(input.value) : null;
+        
+        // If clicking the same tag, deselect it
+        if (currentTag === tagId) {
+            input.value = '';
+        } else {
+            // Select the new tag (single selection)
+            input.value = tagId;
+        }
+        
+        // Update button styles - only one can be selected
+        document.querySelectorAll('.tag-btn').forEach(btn => {
+            const btnTagId = parseInt(btn.dataset.tagId);
+            if (btnTagId === tagId && currentTag !== tagId) {
+                // Select this button
+                btn.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                btn.classList.add('bg-primary-blue', 'text-white');
+            } else {
+                // Deselect all other buttons
+                btn.classList.remove('bg-primary-blue', 'text-white');
+                btn.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+            }
+        });
+        
+        // Submit form
+        document.getElementById('filterForm').submit();
+    }
+</script>
 @endpush
 @endsection

@@ -69,7 +69,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">لا توجد كوبونات</td>
+                        <td colspan="6" class="px-4 py-8 text-right text-gray-500">لا توجد كوبونات</td>
                     </tr>
                 @endforelse
             </tbody>

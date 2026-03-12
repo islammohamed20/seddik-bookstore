@@ -1,19 +1,23 @@
 @extends('admin.layouts.app')
 
-@section('title', 'المستخدمين')
-@section('page-title', 'إدارة المستخدمين')
+@php
+    $isCustomersPage = request()->routeIs('admin.customers.index');
+@endphp
+
+@section('title', $isCustomersPage ? 'العملاء' : 'المستخدمين')
+@section('page-title', $isCustomersPage ? 'إدارة العملاء' : 'إدارة المستخدمين')
 
 @section('content')
 <div class="space-y-6">
     <div class="flex justify-between items-center">
-        <p class="text-gray-600">إجمالي {{ $users->total() }} مستخدم</p>
+        <p class="text-gray-600">إجمالي {{ $users->total() }} {{ $isCustomersPage ? 'عميل' : 'مستخدم' }}</p>
         <a href="{{ route('admin.users.create') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-            <i class="fas fa-plus ml-2"></i>إضافة مستخدم
+            <i class="fas fa-plus ml-2"></i>{{ $isCustomersPage ? 'إضافة عميل' : 'إضافة مستخدم' }}
         </a>
     </div>
     
     <div class="bg-white rounded-lg shadow p-4">
-        <form action="{{ route('admin.users.index') }}" method="GET" class="flex gap-4">
+        <form action="{{ $isCustomersPage ? route('admin.customers.index') : route('admin.users.index') }}" method="GET" class="flex gap-4">
             <input type="text" name="search" value="{{ request('search') }}" 
                    placeholder="بحث بالاسم أو البريد..."
                    class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
@@ -82,7 +86,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">لا يوجد مستخدمين</td>
+                        <td colspan="5" class="px-4 py-8 text-right text-gray-500">{{ $isCustomersPage ? 'لا يوجد عملاء' : 'لا يوجد مستخدمين' }}</td>
                     </tr>
                 @endforelse
             </tbody>

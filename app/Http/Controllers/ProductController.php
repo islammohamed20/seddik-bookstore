@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\TagGroup;
+use App\Services\VariantResolver;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -15,8 +17,14 @@ class ProductController extends Controller
             ->with(['images' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')])
             ->active();
 
-        if ($search = $request->string('q')->toString()) {
-            $query->search($search);
+        // Filter by tags (single selection)
+        if ($tags = $request->input('tags')) {
+            $tagId = is_numeric($tags) ? (int)$tags : null;
+            if ($tagId) {
+                $query->whereHas('tagOptions', function ($q) use ($tagId) {
+                    $q->where('tag_options.id', $tagId);
+                });
+            }
         }
 
         if ($categorySlug = $request->string('category')->toString()) {
@@ -50,18 +58,18 @@ class ProductController extends Controller
 
         // فلترة حسب السعر
         if ($minPrice = $request->float('min_price')) {
-            $query->whereRaw('COALESCE(sale_price_inside_assiut, price_inside_assiut) >= ?', [$minPrice]);
+            $query->whereRaw('COALESCE(sale_price, price) >= ?', [$minPrice]);
         }
 
         if ($maxPrice = $request->float('max_price')) {
-            $query->whereRaw('COALESCE(sale_price_inside_assiut, price_inside_assiut) <= ?', [$maxPrice]);
+            $query->whereRaw('COALESCE(sale_price, price) <= ?', [$maxPrice]);
         }
 
         $sort = $request->string('sort')->toString();
 
         $query = match ($sort) {
-            'price_asc' => $query->orderByRaw('COALESCE(sale_price_inside_assiut, price_inside_assiut) asc'),
-            'price_desc' => $query->orderByRaw('COALESCE(sale_price_inside_assiut, price_inside_assiut) desc'),
+            'price_asc' => $query->orderByRaw('COALESCE(sale_price, price) asc'),
+            'price_desc' => $query->orderByRaw('COALESCE(sale_price, price) desc'),
             'latest' => $query->latest(),
             'name_asc' => $query->orderBy('name_en'),
             'name_desc' => $query->orderByDesc('name_en'),
@@ -73,6 +81,7 @@ class ProductController extends Controller
         $categories = Category::query()
             ->root()
             ->active()
+            ->with(['children' => fn ($q) => $q->active()->ordered()])
             ->ordered()
             ->get();
 
@@ -81,12 +90,22 @@ class ProductController extends Controller
             ->ordered()
             ->get();
 
+        $tagGroups = TagGroup::query()
+            ->active()
+            ->with(['options' => fn($q) => $q->active()->ordered()])
+            ->ordered()
+            ->get();
+
+        $selectedTags = $request->input('tags') ? [is_numeric($request->input('tags')) ? (int)$request->input('tags') : null] : [];
+        $selectedTags = array_filter($selectedTags); // Remove null values
+
         return view('storefront.products.index', [
             'products' => $products,
             'categories' => $categories,
             'brands' => $brands,
+            'tagGroups' => $tagGroups,
+            'selectedTags' => $selectedTags,
             'filters' => [
-                'q' => $search,
                 'category' => $categorySlug,
                 'brand' => $brandSlug,
                 'type' => $type,
@@ -94,6 +113,7 @@ class ProductController extends Controller
                 'in_stock' => $request->boolean('in_stock'),
                 'min_price' => $minPrice ?? null,
                 'max_price' => $maxPrice ?? null,
+                'tags' => $selectedTags,
             ],
         ]);
     }
@@ -103,16 +123,35 @@ class ProductController extends Controller
      */
     public function byCategory(Request $request, $category)
     {
-        $categoryModel = Category::where('slug', $category)->first();
+        $categoryModel = Category::query()
+            ->with([
+                'parent',
+                'children' => fn ($q) => $q->active()->ordered(),
+            ])
+            ->where('slug', $category)
+            ->first();
 
         // إذا لم يوجد القسم، عرض صفحة خاصة
         if (! $categoryModel) {
-            $categories = Category::root()->active()->ordered()->get();
+            $categories = Category::query()
+                ->root()
+                ->active()
+                ->with(['children' => fn ($q) => $q->active()->ordered()])
+                ->ordered()
+                ->get();
+
+            $tagGroups = TagGroup::query()
+                ->active()
+                ->with(['options' => fn($q) => $q->active()->ordered()])
+                ->ordered()
+                ->get();
 
             return view('storefront.products.index', [
                 'products' => collect(),
                 'categories' => $categories,
                 'brands' => collect(),
+                'tagGroups' => $tagGroups,
+                'selectedTags' => [],
                 'notFound' => true,
                 'notFoundType' => 'category',
                 'notFoundSlug' => $category,
@@ -120,23 +159,63 @@ class ProductController extends Controller
             ]);
         }
 
+        $categoryIds = [$categoryModel->id];
+        if (is_null($categoryModel->parent_id)) {
+            $categoryIds = array_merge(
+                $categoryIds,
+                $categoryModel->children->pluck('id')->all()
+            );
+        }
+
         $query = Product::query()
             ->with(['images' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')])
             ->active()
-            ->where('category_id', $categoryModel->id);
+            ->whereIn('category_id', $categoryIds);
+
+        // Filter by tags (single selection)
+        if ($tags = $request->input('tags')) {
+            $tagId = is_numeric($tags) ? (int)$tags : null;
+            if ($tagId) {
+                $query->whereHas('tagOptions', function ($q) use ($tagId) {
+                    $q->where('tag_options.id', $tagId);
+                });
+            }
+        }
 
         $products = $query->paginate(12)->withQueryString();
 
-        $categories = Category::root()->active()->ordered()->get();
+        $categories = Category::query()
+            ->root()
+            ->active()
+            ->with(['children' => fn ($q) => $q->active()->ordered()])
+            ->ordered()
+            ->get();
         $brands = Brand::active()->ordered()->get();
+
+        $tagGroups = TagGroup::query()
+            ->active()
+            ->with(['options' => fn($q) => $q->active()->ordered()])
+            ->ordered()
+            ->get();
+
+        $selectedTags = $request->input('tags') ? [is_numeric($request->input('tags')) ? (int)$request->input('tags') : null] : [];
+        $selectedTags = array_filter($selectedTags); // Remove null values
+
+        $parentCategory = $categoryModel->parent ?: $categoryModel;
+        $subcategories = $parentCategory->children()->active()->ordered()->get();
 
         return view('storefront.products.index', [
             'products' => $products,
             'categories' => $categories,
             'brands' => $brands,
+            'tagGroups' => $tagGroups,
+            'selectedTags' => $selectedTags,
             'currentCategory' => $categoryModel,
+            'parentCategory' => $parentCategory,
+            'subcategories' => $subcategories,
             'filters' => [
                 'category' => $category,
+                'tags' => $selectedTags,
             ],
         ]);
     }
@@ -152,10 +231,18 @@ class ProductController extends Controller
         if (! $brandModel) {
             $brands = Brand::active()->ordered()->get();
 
+            $tagGroups = TagGroup::query()
+                ->active()
+                ->with(['options' => fn($q) => $q->active()->ordered()])
+                ->ordered()
+                ->get();
+
             return view('storefront.products.index', [
                 'products' => collect(),
                 'categories' => collect(),
                 'brands' => $brands,
+                'tagGroups' => $tagGroups,
+                'selectedTags' => [],
                 'notFound' => true,
                 'notFoundType' => 'brand',
                 'notFoundSlug' => $brand,
@@ -168,18 +255,45 @@ class ProductController extends Controller
             ->active()
             ->where('brand_id', $brandModel->id);
 
+        // Filter by tags (single selection)
+        if ($tags = $request->input('tags')) {
+            $tagId = is_numeric($tags) ? (int)$tags : null;
+            if ($tagId) {
+                $query->whereHas('tagOptions', function ($q) use ($tagId) {
+                    $q->where('tag_options.id', $tagId);
+                });
+            }
+        }
+
         $products = $query->paginate(12)->withQueryString();
 
-        $categories = Category::root()->active()->ordered()->get();
+        $categories = Category::query()
+            ->root()
+            ->active()
+            ->with(['children' => fn ($q) => $q->active()->ordered()])
+            ->ordered()
+            ->get();
         $brands = Brand::active()->ordered()->get();
+
+        $tagGroups = TagGroup::query()
+            ->active()
+            ->with(['options' => fn($q) => $q->active()->ordered()])
+            ->ordered()
+            ->get();
+
+        $selectedTags = $request->input('tags') ? [is_numeric($request->input('tags')) ? (int)$request->input('tags') : null] : [];
+        $selectedTags = array_filter($selectedTags); // Remove null values
 
         return view('storefront.products.index', [
             'products' => $products,
             'categories' => $categories,
             'brands' => $brands,
+            'tagGroups' => $tagGroups,
+            'selectedTags' => $selectedTags,
             'currentBrand' => $brandModel,
             'filters' => [
                 'brand' => $brand,
+                'tags' => $selectedTags,
             ],
         ]);
     }
@@ -207,7 +321,12 @@ class ProductController extends Controller
 
         $products = $query->paginate(12)->withQueryString();
 
-        $categories = Category::root()->active()->ordered()->get();
+        $categories = Category::query()
+            ->root()
+            ->active()
+            ->with(['children' => fn ($q) => $q->active()->ordered()])
+            ->ordered()
+            ->get();
         $brands = Brand::active()->ordered()->get();
 
         return view('storefront.products.index', [
@@ -232,7 +351,16 @@ class ProductController extends Controller
             'images' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('sort_order'),
             'brand',
             'category',
+            'tagOptions.group',
         ]);
+
+        // Load active variants for variable products
+        $variantData = [];
+        if ($product->product_type === 'variable') {
+            $product->load(['variants' => fn ($q) => $q->active()->ordered()]);
+            $resolver = new VariantResolver();
+            $variantData = $resolver->buildStorefrontData($product);
+        }
 
         $related = Product::query()
             ->with(['images' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')])
@@ -248,6 +376,7 @@ class ProductController extends Controller
         return view('storefront.products.show', [
             'product' => $product,
             'related' => $related,
+            'variantData' => $variantData,
         ]);
     }
 }

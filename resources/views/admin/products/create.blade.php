@@ -4,14 +4,23 @@
 @section('page-title', 'إضافة منتج جديد')
 
 @section('content')
-<div class="max-w-4xl">
-    <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+<div class="max-w-4xl" x-data="{ productType: '{{ old('product_type', 'simple') }}' }">
+    <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6" data-shortcut-save="true" id="main-form">
         @csrf
         
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">معلومات المنتج</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <label for="product_type" class="block text-sm font-medium text-gray-700 mb-1">نوع المنتج *</label>
+                    <select name="product_type" id="product_type" x-model="productType" required
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                        <option value="simple">منتج بسيط</option>
+                        <option value="variable">منتج متغير</option>
+                    </select>
+                </div>
+
                 <div>
                     <label for="name_ar" class="block text-sm font-medium text-gray-700 mb-1">اسم المنتج عربي *</label>
                     <input type="text" name="name_ar" id="name_ar" value="{{ old('name_ar') }}" required
@@ -38,11 +47,14 @@
                 
                 <div>
                     <label for="category_id" class="block text-sm font-medium text-gray-700 mb-1">التصنيف *</label>
+                    @php
+                        $selectedCategoryId = old('category_id', request('category_id'));
+                    @endphp
                     <select name="category_id" id="category_id" required
                             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
                         <option value="">اختر التصنيف</option>
                         @foreach($categories as $category)
-                            <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                            <option value="{{ $category->id }}" {{ $selectedCategoryId == $category->id ? 'selected' : '' }}>
                                 {{ $category->name_ar ?: $category->name_en }}
                             </option>
                         @endforeach
@@ -63,38 +75,32 @@
                 </div>
                 
                 <div>
-                    <label for="price_inside_assiut" class="block text-sm font-medium text-gray-700 mb-1">السعر داخل أسيوط *</label>
-                    <input type="number" name="price_inside_assiut" id="price_inside_assiut" value="{{ old('price_inside_assiut') }}" step="0.01" min="0" required
+                    <label for="price" class="block text-sm font-medium text-gray-700 mb-1">السعر الأساسي *</label>
+                    <input type="number" name="price" id="price" value="{{ old('price') }}" step="0.01" min="0" required
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                 </div>
                 
                 <div>
-                    <label for="price_outside_assiut" class="block text-sm font-medium text-gray-700 mb-1">السعر خارج أسيوط *</label>
-                    <input type="number" name="price_outside_assiut" id="price_outside_assiut" value="{{ old('price_outside_assiut') }}" step="0.01" min="0" required
-                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                </div>
-                
-                <div>
-                    <label for="sale_price_inside_assiut" class="block text-sm font-medium text-gray-700 mb-1">سعر التخفيض داخل أسيوط</label>
-                    <input type="number" name="sale_price_inside_assiut" id="sale_price_inside_assiut" value="{{ old('sale_price_inside_assiut') }}" step="0.01" min="0"
-                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                           placeholder="فارغ = بدون تخفيض">
-                </div>
-                
-                <div>
-                    <label for="sale_price_outside_assiut" class="block text-sm font-medium text-gray-700 mb-1">سعر التخفيض خارج أسيوط</label>
-                    <input type="number" name="sale_price_outside_assiut" id="sale_price_outside_assiut" value="{{ old('sale_price_outside_assiut') }}" step="0.01" min="0"
+                    <label for="sale_price" class="block text-sm font-medium text-gray-700 mb-1">سعر التخفيض</label>
+                    <input type="number" name="sale_price" id="sale_price" value="{{ old('sale_price') }}" step="0.01" min="0"
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                            placeholder="فارغ = بدون تخفيض">
                 </div>
                 
                 <div>
                     <label for="stock_quantity" class="block text-sm font-medium text-gray-700 mb-1">الكمية المتاحة *</label>
-                    <input type="number" name="stock_quantity" id="stock_quantity" value="{{ old('stock_quantity', 0) }}" min="0" required
+                    <input type="number" name="stock_quantity" id="stock_quantity" value="{{ old('stock_quantity', 1) }}" min="1" required
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                     @error('stock_quantity')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
+                </div>
+                
+                <div>
+                    <label for="low_stock_threshold" class="block text-sm font-medium text-gray-700 mb-1">حد التنبيه للكمية المنخفضة</label>
+                    <input type="number" name="low_stock_threshold" id="low_stock_threshold" value="{{ old('low_stock_threshold', 5) }}" min="0"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">القيمة الافتراضية 5</p>
                 </div>
                 
                 <div>
@@ -135,11 +141,45 @@
             </div>
         </div>
         
+        @if(view()->exists('admin.products.partials.variants-improved'))
+            <div x-show="productType === 'variable'">
+                @include('admin.products.partials.variants-improved')
+            </div>
+        @endif
+
         <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">صور المنتج</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Tags</h3>
+            @php
+                $selectedTagOptions = old('tag_options', []);
+            @endphp
+            @if(isset($tagGroups) && $tagGroups->count())
+                <div class="space-y-5">
+                    @foreach($tagGroups as $group)
+                        <div>
+                            <p class="text-sm font-semibold text-gray-700 mb-2">{{ $group->name_ar ?: $group->name_en }}</p>
+                            <div class="flex flex-wrap gap-2">
+                                @foreach($group->options as $opt)
+                                    <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-300 text-sm cursor-pointer hover:border-indigo-400">
+                                        <input type="checkbox" name="tag_options[]" value="{{ $opt->id }}"
+                                               class="rounded text-indigo-600"
+                                               {{ in_array($opt->id, $selectedTagOptions) ? 'checked' : '' }}>
+                                        <span class="text-gray-700">{{ $opt->name_ar ?: $opt->name_en }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-sm text-gray-500">لا توجد Tags متاحة حالياً.</p>
+            @endif
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">وسائط المنتج</h3>
             
             <div x-data="imageUpload()" class="space-y-4">
-                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-500 transition cursor-pointer"
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-right hover:border-indigo-500 transition cursor-pointer"
                      @click="$refs.fileInput.click()"
                      @dragover.prevent="dragover = true"
                      @dragleave.prevent="dragover = false"
@@ -161,6 +201,16 @@
                             </button>
                         </div>
                     </template>
+                </div>
+
+                <div class="mt-6">
+                    <label for="video" class="block text-sm font-medium text-gray-700 mb-1">فيديو المنتج (اختياري)</label>
+                    <input type="file" name="video" id="video" accept="video/mp4,video/webm,video/ogg"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                    <p class="text-xs text-gray-500 mt-1">الحد الأقصى 10MB، يفضل MP4 قصير</p>
+                    @error('video')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
             </div>
         </div>
@@ -222,11 +272,22 @@ function imageUpload() {
                 reader.readAsDataURL(file);
                 this.files.push(file);
             });
+
+            this.syncInputFiles();
         },
         
         removeImage(index) {
             this.previews.splice(index, 1);
             this.files.splice(index, 1);
+            this.syncInputFiles();
+        },
+
+        syncInputFiles() {
+            if (!this.$refs.fileInput) return;
+
+            const dataTransfer = new DataTransfer();
+            this.files.forEach(file => dataTransfer.items.add(file));
+            this.$refs.fileInput.files = dataTransfer.files;
         }
     }
 }

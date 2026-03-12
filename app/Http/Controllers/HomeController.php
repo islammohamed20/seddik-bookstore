@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Offer;
 use App\Models\Product;
 use App\Models\Slider;
 
@@ -17,7 +18,6 @@ class HomeController extends Controller
             ->get();
 
         $categories = Category::query()
-            ->root()
             ->active()
             ->featured()
             ->ordered()
@@ -39,11 +39,18 @@ class HomeController extends Controller
             ->take(8)
             ->get();
 
+        $homeOffers = Offer::valid()
+            ->featured()
+            ->orderBy('sort_order')
+            ->take(2)
+            ->get();
+
         return view('storefront.home', [
             'sliders' => $sliders,
             'categories' => $categories,
             'featuredProducts' => $featuredProducts,
             'latestProducts' => $latestProducts,
+            'homeOffers' => $homeOffers,
         ]);
     }
 }

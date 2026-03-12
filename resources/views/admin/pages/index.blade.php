@@ -27,7 +27,7 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 font-medium text-gray-800">{{ $page->title }}</td>
                         <td class="px-4 py-3 text-sm text-gray-500">/page/{{ $page->slug }}</td>
-                        <td class="px-4 py-3">
+                        <td class="px-4 py-3 text-sm">
                             <form action="{{ route('admin.pages.toggle-status', $page) }}" method="POST" class="inline">
                                 @csrf
                                 <button type="submit" class="px-2 py-1 text-xs rounded-full {{ $page->is_published ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
@@ -37,23 +37,28 @@
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2">
-                                <a href="{{ route('admin.pages.edit', $page) }}" class="text-indigo-600 hover:text-indigo-800">
+                                <a href="{{ route('admin.pages.edit', $page) }}" class="text-indigo-600 hover:text-indigo-800" title="تعديل">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <form action="{{ route('admin.pages.destroy', $page) }}" method="POST" class="inline"
                                       onsubmit="return confirm('هل أنت متأكد؟')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-800">
+                                    <button type="submit" class="text-red-600 hover:text-red-800" title="حذف">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
+                                @if($page->slug === 'teck-toys-products')
+                                    <a href="{{ route('admin.products.teck-toys') }}" class="text-green-600 hover:text-green-800 text-xs font-medium border border-green-500 rounded-full px-2 py-1" title="إدارة منتجات تيك تويز">
+                                        منتجات تيك تويز
+                                    </a>
+                                @endif
                             </div>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="px-4 py-8 text-center text-gray-500">لا توجد صفحات</td>
+                        <td colspan="4" class="px-4 py-8 text-right text-gray-500">لا توجد صفحات</td>
                     </tr>
                 @endforelse
             </tbody>

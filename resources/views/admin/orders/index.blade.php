@@ -85,7 +85,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">لا توجد طلبات</td>
+                        <td colspan="7" class="px-4 py-8 text-right text-gray-500">لا توجد طلبات</td>
                     </tr>
                 @endforelse
             </tbody>

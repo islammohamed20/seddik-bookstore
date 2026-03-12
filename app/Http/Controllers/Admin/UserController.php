@@ -15,6 +15,10 @@ class UserController extends Controller
     {
         $query = User::with('roles');
 
+        if ($request->routeIs('admin.customers.*') && ! $request->filled('role')) {
+            $query->role('customer');
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -111,7 +115,7 @@ class UserController extends Controller
         $user->syncRoles([$validated['role']]);
 
         return redirect()
-            ->route('admin.users.index')
+            ->route('admin.users.edit', $user)
             ->with('success', 'تم تحديث المستخدم بنجاح');
     }
 

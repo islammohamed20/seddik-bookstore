@@ -7,11 +7,13 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\VisitTrackingController;
+use App\Models\Page;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
@@ -21,6 +23,7 @@ Route::get('/products/{product}', [ProductController::class, 'show'])->name('pro
 Route::get('/categories/{category}', [ProductController::class, 'byCategory'])->name('products.category');
 Route::get('/brands/{brand}', [ProductController::class, 'byBrand'])->name('products.brand');
 Route::get('/search', [ProductController::class, 'search'])->name('products.search');
+Route::get('/bingo', [ProductController::class, 'bingo'])->name('bingo');
 
 // Live Search API
 Route::get('/api/search', [SearchController::class, 'search'])->name('api.search');
@@ -37,6 +40,14 @@ Route::get('/contact', fn () => view('storefront.contact'))->name('contact');
 Route::post('/contact', [App\Http\Controllers\ContactController::class, 'store'])->name('contact.submit');
 Route::get('/offers', [OfferController::class, 'index'])->name('offers');
 Route::get('/offers/{offer}', [OfferController::class, 'show'])->name('offers.show');
+
+Route::get('/page/{page:slug}', function (Page $page) {
+    if (! $page->is_published) {
+        abort(404);
+    }
+
+    return view('storefront.page', compact('page'));
+})->name('page.show');
 
 // Cart Routes
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -60,16 +71,20 @@ Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
 Route::get('/newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe'])->name('newsletter.unsubscribe');
 Route::get('/newsletter/verify/{token}', [NewsletterController::class, 'verify'])->name('newsletter.verify');
 
+// Product Review Routes
+Route::post('/products/{product}/review', [ProductReviewController::class, 'store'])->name('products.review.store')->middleware('auth');
+
 // OTP Routes
 Route::get('/register/verify', [App\Http\Controllers\Auth\RegisteredUserController::class, 'showVerifyOtp'])->name('register.verify');
-Route::post('/register/verify', [App\Http\Controllers\Auth\RegisteredUserController::class, 'verifyOtp'])->name('register.verify');
+Route::post('/register/verify', [App\Http\Controllers\Auth\RegisteredUserController::class, 'verifyOtp'])->name('register.verify.submit');
 Route::post('/register/resend-otp', [App\Http\Controllers\Auth\RegisteredUserController::class, 'resendOtp'])->name('register.resend-otp');
 
 // Authenticated Routes
 Route::middleware('auth')->group(function () {
     // Checkout
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::post('/checkout/calculate-shipping', [CheckoutController::class, 'calculateShipping'])->name('checkout.calculate-shipping');
     Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
 
     // Orders

@@ -30,6 +30,20 @@ class WishlistController extends Controller
      */
     public function store(Product $product)
     {
+        if (! auth()->check()) {
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'يجب عليك تسجيل الدخول أولاً',
+                    'requires_login' => true,
+                ], 401);
+            }
+
+            return redirect()
+                ->route('login')
+                ->with('status', 'يجب عليك تسجيل الدخول أولاً');
+        }
+
         $wishlist = session('wishlist', []);
         
         if (!in_array($product->id, $wishlist)) {
@@ -86,6 +100,20 @@ class WishlistController extends Controller
      */
     public function toggle(Product $product)
     {
+        if (! auth()->check()) {
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'يجب عليك تسجيل الدخول أولاً',
+                    'requires_login' => true,
+                ], 401);
+            }
+
+            return redirect()
+                ->route('login')
+                ->with('status', 'يجب عليك تسجيل الدخول أولاً');
+        }
+
         $wishlist = session('wishlist', []);
         
         if (in_array($product->id, $wishlist)) {

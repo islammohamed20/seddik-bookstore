@@ -60,15 +60,21 @@
                     </div>
                     <div>
                         <span class="text-gray-500">التصنيف:</span>
-                        <span class="font-medium text-gray-800 mr-1">{{ $product->category->name_ar ?? $product->category->name_en ?? '-' }}</span>
+                        <span class="font-medium text-gray-800 mr-1">{{ $product->category?->name_ar ?? $product->category?->name_en ?? '-' }}</span>
                     </div>
                     <div>
                         <span class="text-gray-500">العلامة التجارية:</span>
-                        <span class="font-medium text-gray-800 mr-1">{{ $product->brand->name_ar ?? $product->brand->name_en ?? 'غير محدد' }}</span>
+                        <span class="font-medium text-gray-800 mr-1">{{ $product->brand?->name_ar ?? $product->brand?->name_en ?? 'غير محدد' }}</span>
                     </div>
                     <div>
                         <span class="text-gray-500">النوع:</span>
-                        <span class="font-medium text-gray-800 mr-1">{{ $product->type ?? '-' }}</span>
+                        <span class="font-medium text-gray-800 mr-1">
+                            @if($product->product_type === 'variable')
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-700">منتج متغير</span>
+                            @else
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">منتج بسيط</span>
+                            @endif
+                        </span>
                     </div>
                     <div>
                         <span class="text-gray-500">الترتيب:</span>
@@ -129,6 +135,45 @@
             </div>
             @endif
 
+            <!-- Variants -->
+            @if($product->product_type === 'variable' && $product->variants->count())
+            <div class="bg-white rounded-lg shadow p-6">
+                <h4 class="font-semibold text-gray-800 mb-3">المتغيرات ({{ $product->variants->count() }})</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-right py-2 px-3 text-gray-600">SKU</th>
+                                <th class="text-right py-2 px-3 text-gray-600">السعر</th>
+                                <th class="text-right py-2 px-3 text-gray-600">المخزون</th>
+                                <th class="text-right py-2 px-3 text-gray-600">الخصائص</th>
+                                <th class="text-right py-2 px-3 text-gray-600">الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($product->variants as $variant)
+                                <tr class="border-b border-gray-100">
+                                    <td class="py-2 px-3">{{ $variant->sku ?? '—' }}</td>
+                                    <td class="py-2 px-3">{{ $variant->price ? number_format($variant->price, 2) . ' ج.م' : 'سعر المنتج' }}</td>
+                                    <td class="py-2 px-3 {{ $variant->stock_quantity > 0 ? 'text-green-600' : 'text-red-600' }} font-medium">{{ $variant->stock_quantity }}</td>
+                                    <td class="py-2 px-3 text-xs text-gray-600">
+                                        @foreach($variant->attributeValues as $av)
+                                            {{ $av->attribute?->name_ar ?? '' }}: {{ $av->value }}{{ !$loop->last ? ' | ' : '' }}
+                                        @endforeach
+                                    </td>
+                                    <td class="py-2 px-3">
+                                        <span class="text-xs font-medium px-2 py-0.5 rounded-full {{ $variant->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                            {{ $variant->is_active ? 'نشط' : 'معطّل' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endif
+
             <!-- Orders containing this product -->
             @if($product->orderItems && $product->orderItems->count())
             <div class="bg-white rounded-lg shadow p-6">
@@ -152,7 +197,7 @@
                                         </a>
                                     </td>
                                     <td class="py-2 px-3">{{ $item->quantity }}</td>
-                                    <td class="py-2 px-3">{{ number_format($item->price, 2) }} ج.م</td>
+                                    <td class="py-2 px-3">{{ number_format($item->unit_price, 2) }} ج.م</td>
                                     <td class="py-2 px-3">{{ $item->created_at->format('Y/m/d') }}</td>
                                 </tr>
                             @endforeach
@@ -169,29 +214,14 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <h4 class="font-semibold text-gray-800 mb-4">الأسعار</h4>
                 <div class="space-y-3 text-sm">
-                    @if($product->price_inside_assiut)
                     <div class="flex justify-between items-center">
-                        <span class="text-gray-500">داخل أسيوط</span>
-                        <span class="font-medium">{{ number_format($product->price_inside_assiut, 2) }} ج.م</span>
+                        <span class="text-gray-500">السعر الأساسي</span>
+                        <span class="font-medium">{{ $product->price !== null ? number_format($product->price, 2) . ' ج.م' : 'غير محدد' }}</span>
                     </div>
-                    @endif
-                    @if($product->sale_price_inside_assiut)
+                    @if($product->sale_price)
                     <div class="flex justify-between items-center">
-                        <span class="text-gray-500">تخفيض داخل أسيوط</span>
-                        <span class="font-medium text-green-600">{{ number_format($product->sale_price_inside_assiut, 2) }} ج.م</span>
-                    </div>
-                    @endif
-                    @if($product->price_outside_assiut)
-                    <hr class="border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500">خارج أسيوط</span>
-                        <span class="font-medium">{{ number_format($product->price_outside_assiut, 2) }} ج.م</span>
-                    </div>
-                    @endif
-                    @if($product->sale_price_outside_assiut)
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500">تخفيض خارج أسيوط</span>
-                        <span class="font-medium text-green-600">{{ number_format($product->sale_price_outside_assiut, 2) }} ج.م</span>
+                        <span class="text-gray-500">سعر التخفيض</span>
+                        <span class="font-medium text-green-600">{{ number_format($product->sale_price, 2) }} ج.م</span>
                     </div>
                     @endif
                 </div>
@@ -238,7 +268,7 @@
                 <div class="space-y-3">
                     <form action="{{ route('admin.products.toggle-status', $product) }}" method="POST">
                         @csrf
-                        <button type="submit" class="w-full text-center px-4 py-2 rounded-lg transition text-sm font-medium
+                        <button type="submit" class="w-full text-right px-4 py-2 rounded-lg transition text-sm font-medium
                             {{ $product->is_active ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-green-50 text-green-700 hover:bg-green-100' }}">
                             <i class="fas {{ $product->is_active ? 'fa-eye-slash' : 'fa-eye' }} ml-1"></i>
                             {{ $product->is_active ? 'إلغاء التنشيط' : 'تنشيط المنتج' }}

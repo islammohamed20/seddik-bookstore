@@ -77,9 +77,20 @@
 <body>
     <div class="email-container">
         <!-- Header -->
+        @php
+            use App\Models\Setting;
+            $emailSiteName = Setting::getValue('site_name', 'مكتبة الصديق');
+            $emailSiteNameEn = Setting::getValue('site_name_en', 'El-Sedeek Store');
+            $emailAddress = Setting::getValue('site_address', 'شارع الجمهورية، بجوار الوطنية مول، أسيوط، مصر');
+            $emailPhone = Setting::getValue('site_phone', '01223694848');
+            $emailFrom = Setting::getValue('site_email', 'info@seddik-library.com');
+            $emailFacebook = Setting::getValue('facebook_url', 'https://www.facebook.com/seddik.library');
+            $emailInstagram = Setting::getValue('instagram_url', 'https://www.instagram.com/seddik.library');
+            $emailWhatsapp = 'https://wa.me/'.Setting::getValue('whatsapp_number', '201223694848');
+        @endphp
         <div class="email-header">
-            <h1>مكتبة الصديق</h1>
-            <p>El-Sedeek Store</p>
+            <h1>{{ $emailSiteName }}</h1>
+            <p>{{ $emailSiteNameEn }}</p>
         </div>
 
         <!-- Body -->
@@ -89,17 +100,17 @@
 
         <!-- Footer -->
         <div class="email-footer">
-            <p><strong>متجر الصديق - El-Sedeek Store</strong></p>
-            <p>شارع الجمهورية، بجوار الوطنية مول، أسيوط، مصر</p>
+            <p><strong>{{ $emailSiteName }} - {{ $emailSiteNameEn }}</strong></p>
+            <p>{{ $emailAddress }}</p>
             <p>
-                <a href="tel:01223694848">01223694848</a> | 
-                <a href="mailto:info@seddik-library.com">info@seddik-library.com</a>
+                <a href="tel:{{ $emailPhone }}">{{ $emailPhone }}</a> | 
+                <a href="mailto:{{ $emailFrom }}">{{ $emailFrom }}</a>
             </p>
             
             <div class="social-links">
-                <a href="https://www.facebook.com/seddik.library" target="_blank">Facebook</a> |
-                <a href="https://www.instagram.com/seddik.library" target="_blank">Instagram</a> |
-                <a href="https://wa.me/201223694848" target="_blank">WhatsApp</a>
+                <a href="{{ $emailFacebook }}" target="_blank">Facebook</a> |
+                <a href="{{ $emailInstagram }}" target="_blank">Instagram</a> |
+                <a href="{{ $emailWhatsapp }}" target="_blank">WhatsApp</a>
             </div>
 
             <p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">

@@ -33,6 +33,8 @@ class Offer extends Model
         'badge_label_ar',
         'badge_label_en',
         'banner_image',
+        'banner_color_from',
+        'banner_color_to',
         'sort_order',
     ];
 

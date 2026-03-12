@@ -43,8 +43,16 @@
 ">
     <div class="min-h-screen flex flex-col lg:flex-row">
         <div class="lg:hidden flex items-center justify-between px-4 h-14 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800">
+            @php
+                $adminLogoPath = \App\Models\Setting::getValue('site_logo');
+                $adminLogoUrl = $adminLogoPath ? asset('storage/'.$adminLogoPath) : null;
+            @endphp
             <a href="{{ route('admin.dashboard') }}" class="font-bold flex items-center gap-2">
-                <i class="fas fa-book-open text-indigo-600"></i>
+                @if($adminLogoUrl)
+                    <img src="{{ $adminLogoUrl }}" alt="{{ \App\Models\Setting::getValue('site_name', config('app.name')) }}" class="h-8 w-auto rounded bg-white p-0.5">
+                @else
+                    <i class="fas fa-book-open text-indigo-600"></i>
+                @endif
                 <span>{{ config('app.name') }}</span>
             </a>
             <div class="flex items-center gap-2">
@@ -63,7 +71,11 @@
                :class="sidebarOpen ? 'translate-x-0' : (document.dir === 'rtl' ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0')">
             <div class="h-16 px-4 flex items-center justify-between border-b border-slate-800">
                 <a href="{{ route('admin.dashboard') }}" class="font-bold flex items-center gap-2">
-                    <i class="fas fa-book-open text-indigo-400"></i>
+                    @if($adminLogoUrl)
+                        <img src="{{ $adminLogoUrl }}" alt="{{ \App\Models\Setting::getValue('site_name', config('app.name')) }}" class="h-9 w-auto rounded bg-white p-0.5">
+                    @else
+                        <i class="fas fa-book-open text-indigo-400"></i>
+                    @endif
                     <span>{{ config('app.name') }}</span>
                 </a>
                 <button type="button" class="lg:hidden w-9 h-9 inline-flex items-center justify-center rounded-lg bg-slate-800" @click="sidebarOpen = false">
@@ -95,6 +107,11 @@
                 <a href="{{ route('admin.products.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {{ request()->routeIs('admin.products.*') ? 'bg-indigo-600 text-white' : 'text-slate-200' }}">
                     <i class="fas fa-box w-5 text-center"></i>
                     <span>Products</span>
+                </a>
+
+                <a href="{{ route('admin.tags.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {{ request()->routeIs('admin.tags.*') ? 'bg-indigo-600 text-white' : 'text-slate-200' }}">
+                    <i class="fas fa-tags w-5 text-center"></i>
+                    <span>Tags</span>
                 </a>
 
                 <a href="{{ route('admin.offers.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 {{ request()->routeIs('admin.offers.*') ? 'bg-indigo-600 text-white' : 'text-slate-200' }}">

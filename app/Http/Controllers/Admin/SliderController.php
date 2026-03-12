@@ -97,7 +97,7 @@ class SliderController extends Controller
         $slider->update($validated);
 
         return redirect()
-            ->route('admin.sliders.index')
+            ->route('admin.sliders.edit', $slider)
             ->with('success', 'تم تحديث السلايدر بنجاح');
     }
 

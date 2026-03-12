@@ -41,7 +41,7 @@
 
         @if(empty($items))
             <!-- Empty Cart State -->
-            <div class="bg-white rounded-2xl shadow-lg p-12 text-center max-w-2xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-lg p-12 text-right max-w-2xl mx-auto">
                 <div class="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
                     <i class="fas fa-shopping-cart text-5xl text-gray-300"></i>
                 </div>
@@ -85,10 +85,19 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex justify-between items-start gap-2">
                                 <div>
-                                    <a href="{{ route('products.show', ['product' => $item['product_id']]) }}" 
+                                    <a href="{{ route('products.show', ['product' => $item['slug'] ?? $item['product_id']]) }}" 
                                        class="font-bold text-gray-900 hover:text-primary-blue transition line-clamp-2 text-lg">
                                         {{ $item['name'] }}
                                     </a>
+                                    @if(!empty($item['variant_name']))
+                                    <p class="text-sm text-indigo-600 mt-0.5">
+                                        <i class="fas fa-tag ml-1"></i>{{ $item['variant_name'] }}
+                                    </p>
+                                    @elseif(!empty($item['variant_label']))
+                                    <p class="text-sm text-indigo-600 mt-0.5">
+                                        <i class="fas fa-tag ml-1"></i>{{ $item['variant_label'] }}
+                                    </p>
+                                    @endif
                                     @if(isset($item['category']))
                                     <p class="text-sm text-gray-500 mt-1">{{ $item['category'] }}</p>
                                     @endif
@@ -98,6 +107,9 @@
                                 <form method="post" action="{{ route('cart.destroy', ['product' => $item['product_id']]) }}">
                                     @csrf
                                     @method('delete')
+                                    @if(!empty($item['variant_id']))
+                                        <input type="hidden" name="variant_id" value="{{ $item['variant_id'] }}">
+                                    @endif
                                     <button type="submit" 
                                             class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition"
                                             title="حذف">
@@ -112,6 +124,9 @@
                                       class="flex items-center gap-2" x-data="{ qty: {{ (int) $item['quantity'] }} }">
                                     @csrf
                                     @method('patch')
+                                    @if(!empty($item['variant_id']))
+                                        <input type="hidden" name="variant_id" value="{{ $item['variant_id'] }}">
+                                    @endif
                                     <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                                         <button type="button" 
                                                 @click="qty = Math.max(1, qty - 1); $nextTick(() => $el.closest('form').submit())"
@@ -123,7 +138,7 @@
                                                x-model="qty"
                                                min="1" 
                                                max="100"
-                                               class="w-14 h-10 text-center border-0 focus:ring-0 font-semibold">
+                                               class="w-14 h-10 text-right border-0 focus:ring-0 font-semibold">
                                         <button type="button" 
                                                 @click="qty = Math.min(100, qty + 1); $nextTick(() => $el.closest('form').submit())"
                                                 class="w-10 h-10 flex items-center justify-center bg-gray-50 hover:bg-gray-100 transition text-gray-600">
@@ -133,7 +148,7 @@
                                 </form>
 
                                 <!-- Price -->
-                                <div class="text-left">
+                                <div class="text-right">
                                     <p class="text-sm text-gray-500">السعر</p>
                                     <p class="text-xl font-bold text-primary-blue">
                                         {{ number_format($item['price'] * $item['quantity'], 2) }} <span class="text-sm">ج.م</span>
@@ -258,7 +273,7 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <!-- Placeholder for related products -->
             @for($i = 0; $i < 4; $i++)
-            <div class="bg-white rounded-xl shadow p-4 text-center">
+            <div class="bg-white rounded-xl shadow p-4 text-right">
                 <div class="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
                     <i class="fas fa-image text-3xl text-gray-300"></i>
                 </div>

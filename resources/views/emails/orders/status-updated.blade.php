@@ -233,20 +233,29 @@
             </div>
 
             <!-- Support Info -->
+            @php
+                use App\Models\Setting;
+                $statusEmailPhone = Setting::getValue('site_phone', '01223694848');
+                $statusWhatsapp = 'https://wa.me/'.Setting::getValue('whatsapp_number', '201223694848');
+                $statusSupportEmail = Setting::getValue('site_email', 'info@seddik-library.com');
+                $statusSiteName = Setting::getValue('site_name', 'متجر الصديق');
+                $statusSiteNameEn = Setting::getValue('site_name_en', 'El-Sedeek Store');
+                $statusAddress = Setting::getValue('site_address', 'شارع الجمهورية، بجوار الوطنية مول، أسيوط، مصر');
+            @endphp
             <div style="background-color: #f0f8ff; border-right: 4px solid #003399; padding: 15px; border-radius: 4px; margin-top: 20px;">
                 <p style="margin: 0; line-height: 1.8;">
                     <strong>💬 أسئلة أو استفسارات؟</strong><br>
                     نحن هنا لمساعدتك! تواصل معنا:<br>
-                    واتساب: <a href="https://wa.me/201223694848" style="color: #003399; text-decoration: none; font-weight: bold;">01223694848</a><br>
-                    بريد: <a href="mailto:info@seddik-library.com" style="color: #003399; text-decoration: none;">info@seddik-library.com</a>
+                    واتساب: <a href="{{ $statusWhatsapp }}" style="color: #003399; text-decoration: none; font-weight: bold;">{{ $statusEmailPhone }}</a><br>
+                    بريد: <a href="mailto:{{ $statusSupportEmail }}" style="color: #003399; text-decoration: none;">{{ $statusSupportEmail }}</a>
                 </p>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="email-footer">
-            <p><strong>متجر الصديق - El-Sedeek Store</strong></p>
-            <p>شارع الجمهورية، بجوار الوطنية مول، أسيوط، مصر</p>
+            <p><strong>{{ $statusSiteName }} - {{ $statusSiteNameEn }}</strong></p>
+            <p>{{ $statusAddress }}</p>
             <p>© {{ date('Y') }} جميع الحقوق محفوظة</p>
         </div>
     </div>

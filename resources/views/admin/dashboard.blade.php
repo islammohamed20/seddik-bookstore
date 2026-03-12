@@ -146,7 +146,7 @@
                             <p class="text-sm font-medium text-gray-800 truncate">{{ $product->name }}</p>
                             <p class="text-xs text-gray-500">{{ number_format($product->price, 2) }} ج.م</p>
                         </div>
-                        <div class="text-left">
+                        <div class="text-right">
                             <div class="flex flex-col items-end">
                                 <span class="text-sm font-bold text-indigo-600">{{ $product->sold_quantity ?? 0 }}</span>
                                 <span class="text-xs text-gray-500">مبيعات</span>

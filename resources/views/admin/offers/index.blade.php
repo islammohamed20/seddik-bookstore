@@ -20,6 +20,8 @@
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500">الخصم</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500">المنتجات</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500">الفترة</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500">مميز</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500">الترتيب</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500">الحالة</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500">إجراءات</th>
                 </tr>
@@ -41,6 +43,12 @@
                         <td class="px-4 py-3 text-sm">
                             {{ $offer->starts_at->format('Y/m/d') }} - {{ $offer->ends_at->format('Y/m/d') }}
                         </td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 text-xs rounded-full {{ $offer->is_featured ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-600' }}">
+                                {{ $offer->is_featured ? 'مميز' : 'عادي' }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600">{{ $offer->sort_order ?? 0 }}</td>
                         <td class="px-4 py-3">
                             <form action="{{ route('admin.offers.toggle-status', $offer) }}" method="POST" class="inline">
                                 @csrf
@@ -67,7 +75,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">لا توجد عروض</td>
+                        <td colspan="8" class="px-4 py-8 text-right text-gray-500">لا توجد عروض</td>
                     </tr>
                 @endforelse
             </tbody>

@@ -91,7 +91,7 @@ class ShippingZoneController extends Controller
         $shippingZone->update($validated);
 
         return redirect()
-            ->route('admin.shipping-zones.index')
+            ->route('admin.shipping-zones.edit', $shippingZone)
             ->with('success', 'تم تحديث منطقة الشحن بنجاح');
     }
 

@@ -55,3 +55,29 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+
+/* removed no-scrollbar utility */
+
+/* RTL text alignment enforcement */
+html[dir="rtl"] body {
+    text-align: right;
+}
+
+/* Override any left-aligned text utilities under RTL */
+html[dir="rtl"] [class*="text-left"] {
+    text-align: right !important;
+}
+
+html[dir="rtl"] [class*="text-start"] {
+    text-align: right !important;
+}
+
+@media (max-width: 639.98px) {
+    h1, .text-6xl, .text-5xl { font-size: 1.6rem; line-height: 1.3; }
+    h2, .text-4xl { font-size: 1.45rem; line-height: 1.3; }
+    h3, .text-3xl { font-size: 1.3rem; line-height: 1.35; }
+    .text-2xl { font-size: 1.2rem; line-height: 1.4; }
+    .text-xl { font-size: 1.1rem; line-height: 1.5; }
+    .leading-relaxed { line-height: 1.6; }
+    .prose p { font-size: 0.95rem; line-height: 1.7; }
+}

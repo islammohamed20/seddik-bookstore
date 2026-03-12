@@ -69,10 +69,48 @@
                 <p class="text-xs text-gray-500 mt-1">مثال: fa-book-open, fa-star, fa-puzzle-piece. <a href="https://fontawesome.com/icons" target="_blank" class="text-indigo-600 hover:underline">تصفح الأيقونات</a></p>
             </div>
 
-            <div>
-                <label for="image" class="block text-sm font-medium text-gray-700 mb-1">صورة التصنيف</label>
-                <input type="file" name="image" id="image" accept="image/*"
-                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="color_start" class="block text-sm font-medium text-gray-700 mb-1">لون البداية (الخلفية)</label>
+                    <div class="flex items-center gap-3">
+                        <input type="color" id="color_start_picker" value="{{ old('color_start', '#3b82f6') }}"
+                               class="w-12 h-10 rounded border border-gray-300" onchange="document.getElementById('color_start').value=this.value">
+                        <input type="text" name="color_start" id="color_start" value="{{ old('color_start') }}"
+                               placeholder="#3b82f6"
+                               class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                    @error('color_start')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label for="color_end" class="block text-sm font-medium text-gray-700 mb-1">لون النهاية (الخلفية)</label>
+                    <div class="flex items-center gap-3">
+                        <input type="color" id="color_end_picker" value="{{ old('color_end', '#1d4ed8') }}"
+                               class="w-12 h-10 rounded border border-gray-300" onchange="document.getElementById('color_end').value=this.value">
+                        <input type="text" name="color_end" id="color_end" value="{{ old('color_end') }}"
+                               placeholder="#1d4ed8"
+                               class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                    @error('color_end')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="banner_desktop" class="block text-sm font-medium text-gray-700 mb-1">بانر سطح المكتب</label>
+                    <input type="file" name="banner_desktop" id="banner_desktop" accept="image/*"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">الحد الأقصى: 4MB - يعرض في Page Header</p>
+                </div>
+                <div>
+                    <label for="banner_mobile" class="block text-sm font-medium text-gray-700 mb-1">بانر الموبايل</label>
+                    <input type="file" name="banner_mobile" id="banner_mobile" accept="image/*"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">الحد الأقصى: 2MB - يعرض في Page Header</p>
+                </div>
             </div>
             
             <div>

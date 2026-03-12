@@ -41,6 +41,18 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        // التحقق إذا كان المستخدم أدمن ومحاولة تسجيل الدخول عبر /login
+        if (request()->is('login') || request()->is('api/login')) {
+            $user = \App\Models\User::where('email', $this->email)->first();
+            if ($user && $user->is_admin) {
+                RateLimiter::hit($this->throttleKey());
+                
+                throw ValidationException::withMessages([
+                    'email' => 'يجب على الأدمن تسجيل الدخول عبر صفحة الأدمن المخصصة',
+                ]);
+            }
+        }
+
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 

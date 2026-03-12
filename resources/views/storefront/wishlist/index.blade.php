@@ -28,7 +28,7 @@
 
         @if($products->isEmpty())
             <!-- Empty Wishlist State -->
-            <div class="bg-white rounded-2xl shadow-lg p-12 text-center max-w-2xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-lg p-12 text-right max-w-2xl mx-auto">
                 <div class="w-32 h-32 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
                     <i class="fas fa-heart text-5xl text-pink-300"></i>
                 </div>

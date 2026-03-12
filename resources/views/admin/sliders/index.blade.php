@@ -52,7 +52,7 @@
                 </div>
             </div>
         @empty
-            <div class="col-span-full bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            <div class="col-span-full bg-white rounded-lg shadow p-8 text-right text-gray-500">
                 لا توجد سلايدات
             </div>
         @endforelse

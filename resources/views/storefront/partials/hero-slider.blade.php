@@ -113,20 +113,3 @@
     </div>
 </section>
 @endif
-        <i class="fas fa-chevron-right text-primary-blue"></i>
-    </button>
-    <button @click="next()" 
-            class="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition transform hover:scale-110 z-20">
-        <i class="fas fa-chevron-left text-primary-blue"></i>
-    </button>
-
-    <!-- Dots Navigation -->
-    <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-3 z-20">
-        <template x-for="i in totalSlides" :key="i">
-            <button @click="goTo(i - 1)" 
-                    :class="currentSlide === (i - 1) ? 'bg-white w-10' : 'bg-white/50 w-3 hover:bg-white/70'" 
-                    class="h-3 rounded-full transition-all duration-300">
-            </button>
-        </template>
-    </div>
-</section>

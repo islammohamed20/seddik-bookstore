@@ -54,6 +54,18 @@
                 @endif
                 <input type="file" name="image" accept="image/*" class="w-full border border-gray-300 rounded-lg px-4 py-2">
             </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="banner_color_from" class="block text-sm font-medium text-gray-700 mb-1">لون البداية</label>
+                    <input type="color" name="banner_color_from" id="banner_color_from" value="{{ old('banner_color_from', $offer->banner_color_from ?? '#003399') }}"
+                           class="w-full h-10 border border-gray-300 rounded-lg px-2 py-1">
+                </div>
+                <div>
+                    <label for="banner_color_to" class="block text-sm font-medium text-gray-700 mb-1">لون النهاية</label>
+                    <input type="color" name="banner_color_to" id="banner_color_to" value="{{ old('banner_color_to', $offer->banner_color_to ?? '#003D7A') }}"
+                           class="w-full h-10 border border-gray-300 rounded-lg px-2 py-1">
+                </div>
+            </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">المنتجات المشمولة</label>
                 <div class="max-h-60 overflow-y-auto border border-gray-300 rounded-lg p-3 space-y-2">
@@ -74,6 +86,20 @@
                            class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
                     <span class="mr-2 text-sm text-gray-700">نشط</span>
                 </label>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" name="is_featured" value="1" {{ old('is_featured', $offer->is_featured) ? 'checked' : '' }}
+                               class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <span class="mr-2 text-sm text-gray-700">مميز في الصفحة الرئيسية</span>
+                    </label>
+                </div>
+                <div>
+                    <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-1">ترتيب العرض</label>
+                    <input type="number" name="sort_order" id="sort_order" value="{{ old('sort_order', $offer->sort_order ?? 0) }}" min="0"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                </div>
             </div>
         </div>
         <div class="flex items-center gap-4">

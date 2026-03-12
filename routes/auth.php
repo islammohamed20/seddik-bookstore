@@ -33,7 +33,7 @@ Route::middleware('guest')->group(function () {
         ->name('password.verify-otp');
     
     Route::post('password/verify-otp', [PasswordResetLinkController::class, 'verifyOtp'])
-        ->name('password.verify-otp');
+        ->name('password.verify-otp.submit');
     
     Route::post('password/resend-otp', [PasswordResetLinkController::class, 'resendOtp'])
         ->name('password.resend-otp');
@@ -44,6 +44,14 @@ Route::middleware('guest')->group(function () {
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
 });
+
+// Admin Login Routes (Accessible even if logged in as user, but redirects if already admin)
+Route::get('admin/login', [AuthenticatedSessionController::class, 'create'])
+    ->name('admin.login');
+
+Route::post('admin/login', [AuthenticatedSessionController::class, 'store'])
+    ->name('admin.login.store');
+
 
 Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)

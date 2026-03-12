@@ -3,7 +3,13 @@
 @section('title', ($offer->name_ar ?? $offer->name_en) . ' - ' . __('العروض') . ' - ' . __('مكتبة الصديق'))
 
 @section('content')
-<section class="bg-gradient-to-br from-primary-blue to-primary-blue-dark py-14">
+@php
+    $heroFrom = $offer->banner_color_from ?: '#003399';
+    $heroTo = $offer->banner_color_to ?: '#003D7A';
+    $useHeroGradient = $offer->banner_color_from || $offer->banner_color_to;
+@endphp
+<section class="bg-gradient-to-br from-primary-blue to-primary-blue-dark py-14"
+         style="{{ $useHeroGradient ? 'background-image: linear-gradient(135deg, ' . $heroFrom . ', ' . $heroTo . ');' : '' }}">
     <div class="container mx-auto px-4">
         <nav class="text-white/80 text-sm mb-6">
             <a href="{{ route('home') }}" class="hover:text-white">الرئيسية</a>

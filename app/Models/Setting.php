@@ -18,6 +18,16 @@ class Setting extends Model
             return $default;
         }
 
-        return app()->getLocale() === 'ar' ? ($setting->value_ar ?? $setting->value_en) : ($setting->value_en ?? $setting->value_ar);
+        $locale = app()->getLocale();
+
+        $valueAr = $setting->value_ar ?? null;
+        $valueEn = $setting->value_en ?? null;
+        $generic = $setting->value ?? null;
+
+        if ($locale === 'ar') {
+            return $valueAr ?? $valueEn ?? $generic ?? $default;
+        }
+
+        return $valueEn ?? $valueAr ?? $generic ?? $default;
     }
 }

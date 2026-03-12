@@ -68,23 +68,23 @@
                     </tbody>
                     <tfoot class="bg-gray-50">
                         <tr>
-                            <td colspan="3" class="px-4 py-3 text-left font-medium">المجموع الفرعي</td>
+                            <td colspan="3" class="px-4 py-3 text-right font-medium">المجموع الفرعي</td>
                             <td class="px-4 py-3 font-medium">{{ number_format($order->subtotal, 2) }} ج.م</td>
                         </tr>
                         @if($order->discount_amount > 0)
                             <tr>
-                                <td colspan="3" class="px-4 py-3 text-left text-green-600">الخصم</td>
+                                <td colspan="3" class="px-4 py-3 text-right text-green-600">الخصم</td>
                                 <td class="px-4 py-3 text-green-600">-{{ number_format($order->discount_amount, 2) }} ج.م</td>
                             </tr>
                         @endif
                         @if($order->shipping_cost > 0)
                             <tr>
-                                <td colspan="3" class="px-4 py-3 text-left">الشحن</td>
+                                <td colspan="3" class="px-4 py-3 text-right">الشحن</td>
                                 <td class="px-4 py-3">{{ number_format($order->shipping_cost, 2) }} ج.م</td>
                             </tr>
                         @endif
                         <tr class="text-lg">
-                            <td colspan="3" class="px-4 py-3 text-left font-bold">الإجمالي</td>
+                            <td colspan="3" class="px-4 py-3 text-right font-bold">الإجمالي</td>
                             <td class="px-4 py-3 font-bold text-indigo-600">{{ number_format($order->grand_total, 2) }} ج.م</td>
                         </tr>
                     </tfoot>

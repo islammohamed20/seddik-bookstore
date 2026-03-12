@@ -9,6 +9,10 @@ use App\Models\AdminNotification;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\Setting;
+use App\Models\ShippingMethod;
+use App\Models\ShippingZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -36,6 +40,12 @@ class CheckoutController extends Controller
         $subtotal = collect($cart)->sum(function ($item) {
             return $item['price'] * $item['quantity'];
         });
+
+        $minOrder = $this->getMinOrderValue($request);
+        if ($minOrder > 0 && $subtotal < $minOrder) {
+            return redirect()->route('cart.index')
+                ->with('error', 'الحد الأدنى لقيمة الطلب هو ' . number_format($minOrder, 2) . ' ج.م');
+        }
 
         // التحقق من الكوبون المطبق
         $appliedCoupon = $request->session()->get('applied_coupon');
@@ -142,6 +152,12 @@ class CheckoutController extends Controller
             return $item['price'] * $item['quantity'];
         });
 
+        $minOrder = $this->getMinOrderValue($request);
+        if ($minOrder > 0 && $subtotal < $minOrder) {
+            return redirect()->route('cart.index')
+                ->with('error', 'الحد الأدنى لقيمة الطلب هو ' . number_format($minOrder, 2) . ' ج.م');
+        }
+
         // معالجة الكوبون
         $coupon = null;
         $couponDiscount = 0;
@@ -160,11 +176,40 @@ class CheckoutController extends Controller
         }
 
         $shippingTotal = 0;
+        $shippingMethodName = null;
+        
+        $shippingCity = $validated['shipping_city'] ?? $validated['billing_city'];
+        $shippingCountry = $validated['shipping_country_code'] ?? $validated['billing_country_code'] ?? 'EG';
+        
+        // Calculate weight
+        $weight = collect($cart)->sum(fn ($item) => ($item['weight'] ?? 0) * $item['quantity']);
+
+        $availableMethods = $this->getAvailableShippingMethods($shippingCity, $shippingCountry, $subtotal, $weight);
+        
+        $selectedMethodId = $request->input('shipping_method');
+        $selectedMethod = null;
+
+        if ($selectedMethodId) {
+             $selectedMethod = $availableMethods->first(function($m) use ($selectedMethodId) {
+                 return (string)$m->id === (string)$selectedMethodId;
+             });
+        }
+        
+        // If no valid method selected but methods exist, default to first
+        if (!$selectedMethod && $availableMethods->isNotEmpty()) {
+            $selectedMethod = $availableMethods->first();
+        }
+
+        if ($selectedMethod) {
+            $shippingTotal = $selectedMethod->cost;
+            $shippingMethodName = $selectedMethod->name_ar ?? $selectedMethod->name_en ?? 'Standard Shipping';
+        }
+
         $discountTotal = $couponDiscount;
         $taxTotal = 0;
         $grandTotal = $subtotal + $shippingTotal - $discountTotal + $taxTotal;
 
-        $order = DB::transaction(function () use ($validated, $cart, $subtotal, $shippingTotal, $discountTotal, $taxTotal, $grandTotal, $request, $coupon, $couponDiscount) {
+        $order = DB::transaction(function () use ($validated, $cart, $subtotal, $shippingTotal, $discountTotal, $taxTotal, $grandTotal, $request, $coupon, $couponDiscount, $shippingMethodName) {
             $order = new Order;
 
             $order->order_number = $this->generateOrderNumber();
@@ -211,6 +256,7 @@ class CheckoutController extends Controller
             $order->shipping_state = $validated['shipping_state'] ?? null;
             $order->shipping_postal_code = $validated['shipping_postal_code'] ?? null;
             $order->shipping_country_code = $validated['shipping_country_code'] ?? null;
+            $order->shipping_method = $shippingMethodName;
 
             $order->customer_notes = $validated['customer_notes'] ?? null;
 
@@ -228,19 +274,40 @@ class CheckoutController extends Controller
                     continue;
                 }
 
+                $variantId = $item['variant_id'] ?? null;
+                $variant = $variantId ? ProductVariant::find($variantId) : null;
+
                 $orderItem = new OrderItem;
                 $orderItem->order_id = $order->id;
                 $orderItem->product_id = $product->id;
+                $orderItem->variant_id = $variantId;
                 $orderItem->product_name = $product->name_en ?? $product->name_ar;
-                $orderItem->product_sku = $product->sku;
+                $orderItem->product_sku = $variant ? $variant->sku : $product->sku;
                 $orderItem->quantity = $item['quantity'];
                 $orderItem->unit_price = $item['price'];
                 $orderItem->discount_amount = 0;
                 $orderItem->total = $item['price'] * $item['quantity'];
+
+                // Save variant info in options for record keeping
+                if ($variant) {
+                    $orderItem->options = json_encode([
+                        'variant_id' => $variant->id,
+                        'variant_label' => $variant->label,
+                        'attributes' => $variant->attribute_combination,
+                    ]);
+                }
+
                 $orderItem->save();
 
                 // تحديث المخزون
-                $product->decrement('stock_quantity', $item['quantity']);
+                if ($variant) {
+                    $variant->decrement('stock_quantity', $item['quantity']);
+                    // Sync parent product stock
+                    $totalStock = $product->variants()->where('is_active', true)->sum('stock_quantity');
+                    $product->stock_quantity = $totalStock;
+                } else {
+                    $product->decrement('stock_quantity', $item['quantity']);
+                }
 
                 if ($product->stock_quantity <= 0) {
                     $product->stock_status = 'out_of_stock';
@@ -276,6 +343,29 @@ class CheckoutController extends Controller
         return redirect()->route('orders.show', ['order' => $order->order_number]);
     }
 
+    protected function getMinOrderValue(Request $request): float
+    {
+        $location = $this->isInsideAssiut($request) ? 'inside' : 'outside';
+        $defaultMin = $location === 'inside' ? 50 : 500;
+
+        $key = $location === 'inside'
+            ? 'cart_min_order_inside_assiut'
+            : 'cart_min_order_outside_assiut';
+
+        $value = Setting::getValue($key, $defaultMin);
+        return is_numeric($value) ? (float) $value : (float) $defaultMin;
+    }
+
+    protected function isInsideAssiut(Request $request): bool
+    {
+        if ($request->user()?->city) {
+            $city = $request->user()->city;
+            return str_contains(strtolower($city), 'assiut') || str_contains($city, 'أسيوط');
+        }
+
+        return session('user_location', 'inside_assiut') === 'inside_assiut';
+    }
+
     protected function getCart(Request $request): array
     {
         return $request->session()->get('cart', []);
@@ -303,6 +393,16 @@ class CheckoutController extends Controller
             ->get()
             ->keyBy('id');
 
+        // Collect variant IDs from cart
+        $variantIds = collect($cart)->pluck('variant_id')->filter()->unique()->toArray();
+        $variants = [];
+        if (!empty($variantIds)) {
+            $variants = ProductVariant::whereIn('id', $variantIds)
+                ->where('is_active', true)
+                ->get()
+                ->keyBy('id');
+        }
+
         $validatedCart = [];
 
         foreach ($cart as $key => $item) {
@@ -312,13 +412,27 @@ class CheckoutController extends Controller
                 continue;
             }
 
-            // تحديث السعر
-            $item['price'] = (float) ($product->sale_price ?? $product->price);
+            $variantId = $item['variant_id'] ?? null;
+
+            if ($variantId) {
+                $variant = $variants[$variantId] ?? null;
+                if (!$variant || $variant->product_id !== $product->id) {
+                    continue;
+                }
+
+                $item['price'] = $variant->final_price;
+                $item['variant_label'] = $variant->label;
+                $availableStock = $variant->stock_quantity;
+            } else {
+                $item['price'] = (float) ($product->sale_price ?? $product->price);
+                $availableStock = $product->stock_quantity;
+            }
+
             $item['name'] = $product->name_en ?? $product->name_ar;
 
             // التحقق من الكمية المتوفرة
-            if ($product->stock_quantity > 0) {
-                $item['quantity'] = min($item['quantity'], $product->stock_quantity);
+            if ($availableStock > 0) {
+                $item['quantity'] = min($item['quantity'], $availableStock);
                 $validatedCart[$key] = $item;
             }
         }
@@ -329,5 +443,124 @@ class CheckoutController extends Controller
     protected function generateOrderNumber(): string
     {
         return strtoupper('SD'.now()->format('ymd').Str::random(5));
+    }
+
+    /**
+     * حساب تكلفة الشحن
+     */
+    public function calculateShipping(Request $request)
+    {
+        $request->validate([
+            'city' => 'nullable|string',
+            'country' => 'nullable|string',
+        ]);
+
+        $cart = $this->getCart($request);
+        if (empty($cart)) {
+             return response()->json(['methods' => []]);
+        }
+
+        $subtotal = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
+        $weight = collect($cart)->sum(fn ($item) => ($item['weight'] ?? 0) * $item['quantity']);
+
+        $city = $request->input('city');
+        $country = $request->input('country', 'EG');
+
+        $methods = $this->getAvailableShippingMethods($city, $country, $subtotal, $weight);
+
+        $availableMethods = $methods->map(function ($method) {
+            return [
+                'id' => $method->id,
+                'label' => $method->name . ' (' . ($method->cost > 0 ? number_format($method->cost, 2) . ' ج.م' : 'مجاني') . ')',
+                'cost' => $method->cost,
+                'value' => $method->id,
+                'description' => $method->description_ar,
+                'delivery_time' => $method->delivery_time,
+            ];
+        })->values();
+
+        return response()->json([
+            'methods' => $availableMethods
+        ]);
+    }
+
+    private function getAvailableShippingMethods($city, $country, $subtotal, $weight = 0)
+    {
+        $zones = ShippingZone::active()->ordered()->get();
+        $matchedZone = null;
+
+        foreach ($zones as $zone) {
+            // Check country match if countries are defined
+            if (!empty($zone->countries) && !in_array($country, $zone->countries)) {
+                continue;
+            }
+            
+            // Check city match if cities are defined
+            if (!empty($zone->cities)) {
+                 // Check if city matches any city in the list (case insensitive/trim)
+                 $cityMatch = false;
+                 foreach ($zone->cities as $zoneCity) {
+                     if (mb_strtolower(trim($zoneCity)) === mb_strtolower(trim($city))) {
+                         $cityMatch = true;
+                         break;
+                     }
+                 }
+                 if (!$cityMatch) {
+                     continue;
+                 }
+            }
+
+            $matchedZone = $zone;
+            break; 
+        }
+
+        if (!$matchedZone) {
+            // Check global settings as fallback
+            if (\App\Models\Setting::getValue('shipping_enabled', true)) {
+                $globalCost = \App\Models\Setting::getValue('shipping_cost', 0);
+                $freeThreshold = \App\Models\Setting::getValue('free_shipping_threshold');
+                
+                $cost = $globalCost;
+                if ($freeThreshold && $subtotal >= $freeThreshold) {
+                    $cost = 0;
+                }
+
+                // Create a dummy method for global shipping
+                $globalMethod = new ShippingMethod();
+                $globalMethod->id = 'global'; // String ID to distinguish
+                $globalMethod->name_ar = 'شحن قياسي';
+                $globalMethod->name_en = 'Standard Shipping';
+                $globalMethod->cost = $cost;
+                $globalMethod->type = 'flat_rate';
+                
+                return collect([$globalMethod]);
+            }
+            return collect([]);
+        }
+
+        return $matchedZone->shippingMethods()
+            ->active()
+            ->ordered()
+            ->get()
+            ->filter(function ($method) use ($subtotal, $weight) {
+                if ($method->type === 'free_shipping') {
+                    if ($method->free_shipping_threshold > 0 && $subtotal < $method->free_shipping_threshold) {
+                        return false;
+                    }
+                }
+                if ($method->type === 'weight_based') {
+                    if ($weight < $method->min_weight || ($method->max_weight > 0 && $weight > $method->max_weight)) {
+                        return false;
+                    }
+                }
+                return true;
+            })
+            ->map(function ($method) use ($subtotal) {
+                // Adjust cost for free shipping type
+                if ($method->type === 'free_shipping') {
+                    $method->cost = 0;
+                }
+                return $method;
+            });
     }
 }

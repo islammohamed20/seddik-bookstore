@@ -11,7 +11,6 @@ class Product extends Model
     use HasFactory;
 
     protected $fillable = [
-        'shop_id',
         'category_id',
         'brand_id',
         'slug',
@@ -26,13 +25,10 @@ class Product extends Model
         'description_ar',
         'description_en',
         'type',
-        'price_inside_assiut',
-        'price_outside_assiut',
+        'product_type',
+        'price',
+        'sale_price',
         'old_price',
-        'sale_price_inside_assiut',
-        'sale_price_outside_assiut',
-        'currency',
-        'image',
         'stock_quantity',
         'low_stock_threshold',
         'stock_status',
@@ -46,14 +42,13 @@ class Product extends Model
         'seo_description_en',
         'seo_keywords',
         'extra_attributes',
+        'video_path',
     ];
 
     protected $casts = [
-        'price_inside_assiut' => 'decimal:2',
-        'price_outside_assiut' => 'decimal:2',
+        'price' => 'decimal:2',
+        'sale_price' => 'decimal:2',
         'old_price' => 'decimal:2',
-        'sale_price_inside_assiut' => 'decimal:2',
-        'sale_price_outside_assiut' => 'decimal:2',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
         'is_bingo' => 'boolean',
@@ -63,11 +58,6 @@ class Product extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
-    }
-
-    public function shop()
-    {
-        return $this->belongsTo(Shop::class);
     }
 
     public function images()
@@ -80,26 +70,9 @@ class Product extends Model
         return $this->hasMany(ProductAttributeValue::class);
     }
 
-    /**
-     * Accessor for price attribute based on user location.
-     */
-    public function getPriceAttribute()
+    public function variants()
     {
-        if ($this->isUserInsideAssiut()) {
-            return $this->price_inside_assiut;
-        }
-        return $this->price_outside_assiut;
-    }
-
-    /**
-     * Accessor for sale_price attribute based on user location.
-     */
-    public function getSalePriceAttribute()
-    {
-        if ($this->isUserInsideAssiut()) {
-            return $this->sale_price_inside_assiut;
-        }
-        return $this->sale_price_outside_assiut;
+        return $this->hasMany(ProductVariant::class);
     }
 
     /**
@@ -203,6 +176,19 @@ class Product extends Model
         return (int) $this->stock_quantity;
     }
 
+    public function getTotalStockQuantityAttribute(): int
+    {
+        if ($this->product_type === 'variable') {
+            if ($this->relationLoaded('variants')) {
+                return (int) $this->variants->sum('stock_quantity');
+            }
+
+            return (int) $this->variants()->sum('stock_quantity');
+        }
+
+        return (int) $this->stock_quantity;
+    }
+
     /**
      * التحقق من توفر المنتج
      */
@@ -276,8 +262,33 @@ class Product extends Model
         return $this->belongsToMany(Offer::class, 'offer_product');
     }
 
+    public function tagOptions()
+    {
+        return $this->belongsToMany(TagOption::class, 'product_tag_option');
+    }
+
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function approvedReviews()
+    {
+        return $this->reviews()->approved();
+    }
+
+    public function getAverageRatingAttribute(): float
+    {
+        return $this->approvedReviews()->avg('rating') ?? 0;
+    }
+
+    public function getReviewsCountAttribute(): int
+    {
+        return $this->approvedReviews()->count();
     }
 }

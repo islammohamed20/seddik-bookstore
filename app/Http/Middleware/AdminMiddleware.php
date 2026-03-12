@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class AdminMiddleware
@@ -15,13 +16,15 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! auth()->check()) {
-            return redirect()->route('login');
+        if (! Auth::check()) {
+            return redirect()->route('admin.login');
         }
 
         // Check if user has admin role using Spatie Permission
-        if (! auth()->user()->hasRole('admin')) {
-            abort(403, 'Unauthorized. Admin access required.');
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (! $user->hasRole('admin')) {
+            return redirect()->route('admin.login')->with('error', 'يجب تسجيل الدخول كمسؤول للوصول لهذه الصفحة.');
         }
 
         return $next($request);

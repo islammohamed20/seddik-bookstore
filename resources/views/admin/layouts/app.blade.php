@@ -130,6 +130,11 @@
                     route="admin.email-management.*" 
                     icon="fas fa-mail-bulk" 
                     label="إدارة البريد" />
+
+                <x-admin.sidebar-link 
+                    route="admin.email-templates.*" 
+                    icon="fas fa-envelope-open-text" 
+                    label="قوالب البريد" />
                 
                 <x-admin.sidebar-link 
                     route="admin.shipping-zones.*" 

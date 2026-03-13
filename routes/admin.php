@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EmailManagementController;
+use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\OfferController;
 use App\Http\Controllers\Admin\OrderController;
@@ -123,6 +124,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('email-management/test-send', [EmailManagementController::class, 'testSend'])->name('email-management.test-send');
     Route::get('email-management/export', [EmailManagementController::class, 'export'])->name('email-management.export');
     Route::delete('email-management/{subscriber}', [EmailManagementController::class, 'destroy'])->name('email-management.destroy');
+
+    // Email Templates
+    Route::get('email-templates', [EmailTemplateController::class, 'index'])->name('email-templates.index');
+    Route::get('email-templates/{emailTemplate}/edit', [EmailTemplateController::class, 'edit'])->name('email-templates.edit');
+    Route::put('email-templates/{emailTemplate}', [EmailTemplateController::class, 'update'])->name('email-templates.update');
+    Route::get('email-templates/{emailTemplate}/preview', [EmailTemplateController::class, 'preview'])->name('email-templates.preview');
+    Route::post('email-templates/{emailTemplate}/test-send', [EmailTemplateController::class, 'testSend'])->name('email-templates.test-send');
 
     // Notifications
     Route::prefix('notifications')->name('notifications.')->group(function () {

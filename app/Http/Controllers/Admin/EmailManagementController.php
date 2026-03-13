@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\NewsletterSubscriber;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class EmailManagementController extends Controller
@@ -71,7 +73,11 @@ class EmailManagementController extends Controller
             $query->active()->verified();
         } elseif ($request->recipient_type === 'test') {
             // Send to admin only for testing
-            $query->where('email', auth()->user()->email);
+            $adminEmail = Auth::user()?->email;
+            if (! $adminEmail) {
+                return back()->with('error', 'لا يمكن تحديد بريد المستخدم الحالي لإرسال رسالة اختبار');
+            }
+            $query->where('email', $adminEmail);
         }
 
         $subscribers = $query->get();
@@ -95,7 +101,7 @@ class EmailManagementController extends Controller
                 $sent++;
             } catch (\Exception $e) {
                 $failed++;
-                \Log::error("Failed to send email to {$subscriber->email}: " . $e->getMessage());
+                Log::error("Failed to send email to {$subscriber->email}: ".$e->getMessage());
             }
         }
 
@@ -121,8 +127,20 @@ class EmailManagementController extends Controller
 
             return back()->with('success', 'تم إرسال رسالة الاختبار بنجاح');
         } catch (\Exception $e) {
-            \Log::error('Test email failed: ' . $e->getMessage());
-            return back()->with('error', 'فشل إرسال رسالة الاختبار. تحقق من إعدادات البريد.');
+            $message = $e->getMessage();
+            $username = config('mail.mailers.smtp.username');
+            $password = config('mail.mailers.smtp.password');
+
+            if (is_string($username) && $username !== '') {
+                $message = str_replace($username, '[MAIL_USERNAME]', $message);
+            }
+            if (is_string($password) && $password !== '') {
+                $message = str_replace($password, '[MAIL_PASSWORD]', $message);
+            }
+
+            Log::error('Test email failed: '.$message);
+
+            return back()->with('error', 'فشل إرسال رسالة الاختبار. '.$message);
         }
     }
 

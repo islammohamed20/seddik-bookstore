@@ -13,8 +13,10 @@ class Slider extends Model
 
     protected $fillable = [
         'title_ar',
+        'title_color_ar',
         'title_en',
         'subtitle_ar',
+        'subtitle_color_ar',
         'subtitle_en',
         'image',
         'mobile_image',

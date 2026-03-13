@@ -50,6 +50,23 @@
                     @enderror
                 </div>
             </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="title_color_ar" class="block text-sm font-medium text-gray-700 mb-1">لون العنوان العربي</label>
+                    <div class="flex items-center gap-3">
+                        <input type="color" id="title_color_ar_picker" value="{{ old('title_color_ar', $slider->title_color_ar ?: '#ffffff') }}"
+                               class="h-10 w-14 border border-gray-300 rounded-lg bg-white"
+                               oninput="document.getElementById('title_color_ar').value = this.value;">
+                        <input type="text" name="title_color_ar" id="title_color_ar" value="{{ old('title_color_ar', $slider->title_color_ar) }}"
+                               placeholder="#FFFFFF"
+                               class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    @error('title_color_ar')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -66,6 +83,23 @@
                     <input type="text" name="subtitle_en" id="subtitle_en" value="{{ old('subtitle_en', $slider->subtitle_en) }}"
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
                     @error('subtitle_en')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="subtitle_color_ar" class="block text-sm font-medium text-gray-700 mb-1">لون العنوان الفرعي العربي</label>
+                    <div class="flex items-center gap-3">
+                        <input type="color" id="subtitle_color_ar_picker" value="{{ old('subtitle_color_ar', $slider->subtitle_color_ar ?: '#ffffff') }}"
+                               class="h-10 w-14 border border-gray-300 rounded-lg bg-white"
+                               oninput="document.getElementById('subtitle_color_ar').value = this.value;">
+                        <input type="text" name="subtitle_color_ar" id="subtitle_color_ar" value="{{ old('subtitle_color_ar', $slider->subtitle_color_ar) }}"
+                               placeholder="#FFFFFF"
+                               class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    @error('subtitle_color_ar')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -121,15 +155,6 @@
                     <input type="checkbox" name="open_in_new_tab" value="1" {{ old('open_in_new_tab', $slider->open_in_new_tab) ? 'checked' : '' }}
                            class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
                     <span class="mr-2 text-sm text-gray-700">فتح في تبويب جديد</span>
-                </label>
-            </div>
-                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
-            </div>
-            <div>
-                <label class="flex items-center cursor-pointer">
-                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', $slider->is_active) ? 'checked' : '' }}
-                           class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                    <span class="mr-2 text-sm text-gray-700">نشط</span>
                 </label>
             </div>
         </div>

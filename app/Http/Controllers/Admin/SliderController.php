@@ -25,8 +25,10 @@ class SliderController extends Controller
     {
         $validated = $request->validate([
             'title_ar' => 'nullable|string|max:255',
+            'title_color_ar' => ['nullable', 'string', 'regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'],
             'title_en' => 'nullable|string|max:255',
             'subtitle_ar' => 'nullable|string|max:255',
+            'subtitle_color_ar' => ['nullable', 'string', 'regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'],
             'subtitle_en' => 'nullable|string|max:255',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
             'mobile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
@@ -65,8 +67,10 @@ class SliderController extends Controller
     {
         $validated = $request->validate([
             'title_ar' => 'nullable|string|max:255',
+            'title_color_ar' => ['nullable', 'string', 'regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'],
             'title_en' => 'nullable|string|max:255',
             'subtitle_ar' => 'nullable|string|max:255',
+            'subtitle_color_ar' => ['nullable', 'string', 'regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'],
             'subtitle_en' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
             'mobile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',

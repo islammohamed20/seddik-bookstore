@@ -42,15 +42,15 @@
             :subtitle="$stats['active_products'] . ' نشط'" />
         
         <x-admin.stats-card
-            title="المستخدمين"
+            title="مستخدمي النظام"
             :value="number_format($stats['total_users'])"
-            icon="fas fa-users"
+            icon="fas fa-users-cog"
             color="pink" />
         
         <x-admin.stats-card
-            title="التصنيفات"
-            :value="number_format($stats['total_categories'])"
-            icon="fas fa-folder"
+            title="إجمالي العملاء"
+            :value="number_format($stats['total_customers'])"
+            icon="fas fa-users"
             color="teal" />
         
         <x-admin.stats-card

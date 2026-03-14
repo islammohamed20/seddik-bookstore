@@ -106,14 +106,22 @@
                                title="عرض التفاصيل">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <form action="{{ route('cart.store', $product) }}" method="POST">
-                                @csrf
-                                <button type="submit"
-                                        class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-primary-yellow hover:bg-primary-yellow hover:text-primary-blue transition transform scale-75 group-hover:scale-100"
-                                        title="أضف للسلة">
-                                    <i class="fas fa-shopping-cart"></i>
-                                </button>
-                            </form>
+                            @if($product->product_type === 'variable')
+                                <a href="{{ route('products.show', $product) }}"
+                                   class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-amber-600 hover:bg-amber-500 hover:text-white transition transform scale-75 group-hover:scale-100"
+                                   title="اختيار من متعدد">
+                                    <i class="fas fa-list-check"></i>
+                                </a>
+                            @else
+                                <form action="{{ route('cart.store', $product) }}" method="POST">
+                                    @csrf
+                                    <button type="submit"
+                                            class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-primary-yellow hover:bg-primary-yellow hover:text-primary-blue transition transform scale-75 group-hover:scale-100"
+                                            title="أضف للسلة">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     </div>
                     
@@ -139,13 +147,21 @@
                                 <span class="text-primary-blue font-bold text-lg">{{ number_format($product->price, 2) }} ج.م</span>
                                 @endif
                             </div>
-                            <form action="{{ route('cart.store', $product) }}" method="POST">
-                                @csrf
-                                <button type="submit" 
-                                        class="w-10 h-10 bg-primary-yellow hover:bg-primary-yellow-dark text-primary-blue rounded-lg flex items-center justify-center transition">
-                                    <i class="fas fa-cart-plus"></i>
-                                </button>
-                            </form>
+                            @if($product->product_type === 'variable')
+                                <a href="{{ route('products.show', $product) }}"
+                                   class="inline-flex w-auto px-3 h-10 bg-amber-500 hover:bg-amber-600 text-white rounded-lg items-center justify-center transition text-xs font-bold"
+                                   title="اختيار من متعدد">
+                                    اختيار من متعدد
+                                </a>
+                            @else
+                                <form action="{{ route('cart.store', $product) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" 
+                                            class="w-10 h-10 bg-primary-yellow hover:bg-primary-yellow-dark text-primary-blue rounded-lg flex items-center justify-center transition">
+                                        <i class="fas fa-cart-plus"></i>
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     </div>
                 </div>

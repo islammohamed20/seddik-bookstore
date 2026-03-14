@@ -49,6 +49,24 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $user = Auth::user();
+        if ($user && !$user->isAdmin()) {
+            $dbCartItems = $user->cartItems()->get();
+            $sessionCart = $request->session()->get('cart', []);
+            
+            foreach ($dbCartItems as $item) {
+                $key = $item->variant_id ? $item->product_id . '_v' . $item->variant_id : (string) $item->product_id;
+                if (!isset($sessionCart[$key])) {
+                    $sessionCart[$key] = [
+                        'product_id' => $item->product_id,
+                        'variant_id' => $item->variant_id,
+                        'quantity' => $item->quantity,
+                    ];
+                }
+            }
+            $request->session()->put('cart', $sessionCart);
+        }
+
         // إنشاء إشعار لتسجيل الدخول
         AdminNotification::createLoginNotification(Auth::user());
 
@@ -59,7 +77,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->intended(route('admin.dashboard', absolute: false));
         }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('home', absolute: false));
     }
 
     /**

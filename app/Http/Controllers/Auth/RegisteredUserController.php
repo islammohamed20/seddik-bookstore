@@ -44,14 +44,14 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        // Store registration data in session
         session([
             'registration_data' => [
                 'name' => $request->name,
                 'phone' => $request->phone,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-            ]
+            ],
+            'email' => $request->email,
         ]);
 
         // Check rate limiting
@@ -76,8 +76,11 @@ class RegisteredUserController extends Controller
             return redirect()->route('register')->withErrors(['email' => 'انتهت صلاحية الجلسة. يرجى المحاولة مرة أخرى.']);
         }
 
+        $registrationData = session('registration_data');
+        $email = session('email') ?? ($registrationData['email'] ?? null);
+
         return view('auth.verify-otp', [
-            'email' => session('email'),
+            'email' => $email,
             'type' => 'registration'
         ]);
     }
@@ -96,14 +99,16 @@ class RegisteredUserController extends Controller
             return redirect()->route('register')->withErrors(['otp' => 'انتهت صلاحية الجلسة. يرجى المحاولة مرة أخرى.']);
         }
 
-        $email = session('email');
+        $email = session('email') ?? ($registrationData['email'] ?? null);
+        if (!$email) {
+            return redirect()->route('register')->withErrors(['otp' => 'انتهت صلاحية الجلسة. يرجى المحاولة مرة أخرى.']);
+        }
         
-        // Verify OTP
         if ($this->otpService->verifyOtp($email, $request->otp, UserOtp::TYPE_REGISTRATION)) {
-            // Create user
             $user = User::create($registrationData);
 
-            // Mark email as verified
+            $user->assignRole('customer');
+
             $user->markEmailAsVerified();
 
             // إنشاء إشعار للتسجيل الجديد
@@ -115,7 +120,21 @@ class RegisteredUserController extends Controller
             event(new Registered($user));
             Auth::login($user);
 
-            return redirect()->route('dashboard')->with('success', 'تم إنشاء حسابك بنجاح!');
+            $sessionCart = session('cart', []);
+            if (!empty($sessionCart)) {
+                foreach ($sessionCart as $key => $item) {
+                    \App\Models\CartItem::updateOrCreate(
+                        [
+                            'user_id' => $user->id,
+                            'product_id' => $item['product_id'],
+                            'variant_id' => $item['variant_id'] ?? null,
+                        ],
+                        ['quantity' => $item['quantity']]
+                    );
+                }
+            }
+
+            return redirect()->route('home')->with('success', 'تم إنشاء حسابك بنجاح!');
         } else {
             return back()->withErrors(['otp' => 'رمز التحقق غير صحيح أو منتهي الصلاحية.']);
         }

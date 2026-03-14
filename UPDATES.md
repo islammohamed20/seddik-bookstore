@@ -367,3 +367,113 @@ If icons don't appear, check the icon name at: https://fontawesome.com/icons
 5. ✅ Reviewed storefront pages for consistency
 
 **Result:** Professional, database-driven category management with modern navigation design. Homepage categories are now fully managed through admin panel. Navigation provides excellent UX with clear active states, smooth animations, and mobile-optimized design.
+
+---
+
+## Date: 2026-03-13
+
+## Production Fixes & UX Updates
+
+### 1) Authentication & OTP Flow
+
+- Fixed registration OTP verification session handling (email fallback from `registration_data`).
+- OTP sending changed to immediate send (sync behavior for OTP flow).
+- Added running queue workers via Supervisor for background jobs reliability.
+
+**Files Updated:**
+- `app/Http/Controllers/Auth/RegisteredUserController.php`
+- `app/Mail/OtpMail.php`
+- `/etc/supervisor/conf.d/seddik-bookstore-worker.conf`
+
+### 2) Deployment Reliability
+
+- Added deployment script with safe sequence:
+  - maintenance mode
+  - backup `.env` + DB dump
+  - git update
+  - composer install
+  - npm build
+  - migrate
+  - storage link
+  - permissions + cache warmup
+
+**File Added:**
+- `deploy.sh`
+
+### 3) Storage & Variant Images
+
+- Fixed missing storage symlink issue affecting uploaded images display.
+- Fixed variable product image behavior in cart:
+  - cart now stores variant image when `variant_id` is selected
+  - fallback to product primary image if variant image is missing
+  - image is refreshed during cart validation
+
+**File Updated:**
+- `app/Http/Controllers/CartController.php`
+
+### 4) Cart Behavior Enhancements
+
+- Cart add action now supports storefront flow better for guests.
+- Variant-aware cart keys now used consistently in:
+  - add
+  - update
+  - remove
+- Variant stock and variant price are respected in cart update logic.
+
+**File Updated:**
+- `app/Http/Controllers/CartController.php`
+
+### 5) Orders Section Fix
+
+- Fixed runtime error: `Call to undefined method OrderController::index()`.
+- Implemented missing methods:
+  - `index()` for customer orders listing
+  - `cancel()` for cancellable orders
+- Added customer orders list page.
+
+**Files Updated:**
+- `app/Http/Controllers/OrderController.php`
+- `resources/views/storefront/orders/index.blade.php`
+
+### 6) Account Navigation (Desktop + Mobile)
+
+- Added "حسابي" dropdown in top bar with:
+  - لوحة العميل
+  - الملف الشخصي
+  - طلباتي
+  - تسجيل الخروج
+- Added matching dropdown behavior in mobile bottom navigation for consistency.
+- Added quick account menu block in `/profile` page including dashboard shortcut.
+
+**Files Updated:**
+- `resources/views/layouts/storefront.blade.php`
+- `resources/views/profile/edit.blade.php`
+
+### 7) Product Card CTA Rules (Simple vs Variable)
+
+- Implemented CTA behavior based on product type:
+  - **Variable product:** show `اختيار من متعدد` and navigate to product page
+  - **Simple product:** keep `إضافة للسلة`
+- Applied across product card contexts.
+
+**Files Updated:**
+- `resources/views/components/storefront/product-card.blade.php`
+- `resources/views/storefront/bingo.blade.php`
+- `resources/views/storefront/wishlist/index.blade.php`
+
+### 8) Post-Login Redirect
+
+- Customer redirect after successful login changed to homepage.
+- Customer redirect after successful registration verification changed to homepage.
+- Admin redirect remains to admin dashboard.
+
+**Files Updated:**
+- `app/Http/Controllers/Auth/AuthenticatedSessionController.php`
+- `app/Http/Controllers/Auth/RegisteredUserController.php`
+
+### 9) Infra Notes
+
+- Apache used as primary web server.
+- Nginx was disabled in current deployment setup.
+- SSL enabled with Certbot flow.
+

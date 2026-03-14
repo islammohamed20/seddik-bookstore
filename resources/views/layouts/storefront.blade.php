@@ -135,7 +135,7 @@
     
     @stack('styles')
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased min-h-screen flex flex-col" dir="rtl" x-data="{ mobileMenuOpen: false, searchOpen: false }">
+<body class="bg-gray-50 text-gray-900 antialiased min-h-screen flex flex-col" dir="rtl" x-data="{ mobileMenuOpen: false, searchOpen: false, accountMenuOpen: false }">
     
     <!-- Top Bar -->
     <div class="bg-gradient-to-r from-primary-blue to-blue-800 text-white py-2 text-sm">
@@ -194,10 +194,41 @@
                     <span class="text-white/40 mx-1 hidden sm:inline">|</span>
                 @endif
                 @auth
-                    <a href="{{ route('profile.edit') }}" class="hover:text-primary-yellow transition-all duration-200 flex items-center gap-1.5">
-                        <i class="fas fa-user"></i>
-                        <span class="hidden sm:inline">{{ __('حسابي') }}</span>
-                    </a>
+                    <div class="relative" @click.outside="accountMenuOpen = false">
+                        <button type="button" @click="accountMenuOpen = !accountMenuOpen" class="hover:text-primary-yellow transition-all duration-200 flex items-center gap-1.5">
+                            <i class="fas fa-user"></i>
+                            <span class="hidden sm:inline">{{ __('حسابي') }}</span>
+                            <i class="fas fa-chevron-down text-[10px]"></i>
+                        </button>
+
+                        <div x-show="accountMenuOpen" x-cloak class="absolute left-0 mt-2 w-52 rounded-xl border border-white/20 bg-white text-gray-800 shadow-xl overflow-hidden z-50"
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95">
+                            <a href="{{ route('dashboard') }}" class="flex items-center justify-between px-4 py-3 text-sm hover:bg-blue-50">
+                                <span>لوحة العميل</span>
+                                <i class="fas fa-gauge-high text-primary-blue"></i>
+                            </a>
+                            <a href="{{ route('profile.edit') }}" class="flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 border-t border-gray-100">
+                                <span>الملف الشخصي</span>
+                                <i class="fas fa-user text-gray-600"></i>
+                            </a>
+                            <a href="{{ route('orders.index') }}" class="flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 border-t border-gray-100">
+                                <span>طلباتي</span>
+                                <i class="fas fa-box text-gray-600"></i>
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}" class="border-t border-gray-100">
+                                @csrf
+                                <button type="submit" class="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">
+                                    <span>تسجيل الخروج</span>
+                                    <i class="fas fa-arrow-right-from-bracket"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 @else
                     <a href="{{ route('login') }}" class="hover:text-primary-yellow transition-all duration-200 flex items-center gap-1.5">
                         <i class="fas fa-sign-in-alt"></i>
@@ -388,6 +419,10 @@
             <!-- User Section -->
             <div class="space-y-2">
                 @auth
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 text-gray-700 transition-all">
+                        <span>لوحة العميل</span>
+                        <i class="fas fa-gauge-high text-primary-blue"></i>
+                    </a>
                     <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-50 text-gray-700 transition-all">
                         <div class="flex flex-col text-right">
                             <span class="text-sm font-medium">{{ Auth::user()->name }}</span>
@@ -797,7 +832,7 @@
     @stack('scripts')
 
     <!-- Mobile Tab Bar (Bottom) -->
-    <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-30 pb-[env(safe-area-inset-bottom)]" x-data="{ mobileSearchOpen: false }">
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-30 pb-[env(safe-area-inset-bottom)]" x-data="{ mobileSearchOpen: false, mobileAccountMenuOpen: false }" @click.outside="mobileAccountMenuOpen = false">
         <div class="mx-3 mb-3 rounded-2xl bg-white/95 backdrop-blur border border-gray-200 shadow-[0_-6px_20px_rgba(0,0,0,0.08)]">
             <div class="grid grid-cols-5 items-end h-[76px] px-2 gap-1">
                 <a href="{{ route('products.index') }}" class="flex flex-col items-center justify-center rounded-xl py-2 transition {{ request()->routeIs('products.*') ? 'text-primary-blue bg-primary-blue/10' : 'text-gray-600 hover:text-primary-blue' }}">
@@ -825,10 +860,47 @@
                     </span>
                 </a>
 
-                <a href="{{ Auth::check() ? route('profile.edit') : route('login') }}" class="flex flex-col items-center justify-center rounded-xl py-2 transition {{ request()->routeIs('profile.*') || request()->routeIs('login') ? 'text-primary-blue bg-primary-blue/10' : 'text-gray-600 hover:text-primary-blue' }}">
-                    <i class="fas fa-user text-xl mb-1"></i>
-                    <span class="text-[10px] font-medium">{{ Auth::check() ? 'حسابي' : 'دخول' }}</span>
-                </a>
+                @auth
+                    <div class="relative flex flex-col items-center justify-center rounded-xl py-2 transition {{ request()->routeIs('profile.*') || request()->routeIs('dashboard') || request()->routeIs('orders.*') ? 'text-primary-blue bg-primary-blue/10' : 'text-gray-600 hover:text-primary-blue' }}">
+                        <button type="button" @click="mobileAccountMenuOpen = !mobileAccountMenuOpen" class="flex flex-col items-center justify-center">
+                            <i class="fas fa-user text-xl mb-1"></i>
+                            <span class="text-[10px] font-medium">حسابي</span>
+                        </button>
+
+                        <div x-show="mobileAccountMenuOpen" x-cloak class="absolute bottom-16 left-1/2 -translate-x-1/2 w-52 rounded-xl border border-gray-200 bg-white text-gray-800 shadow-xl overflow-hidden"
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-100"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95">
+                            <a href="{{ route('dashboard') }}" @click="mobileAccountMenuOpen = false" class="flex items-center justify-between px-4 py-3 text-sm hover:bg-blue-50">
+                                <span>لوحة العميل</span>
+                                <i class="fas fa-gauge-high text-primary-blue"></i>
+                            </a>
+                            <a href="{{ route('profile.edit') }}" @click="mobileAccountMenuOpen = false" class="flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 border-t border-gray-100">
+                                <span>الملف الشخصي</span>
+                                <i class="fas fa-user text-gray-600"></i>
+                            </a>
+                            <a href="{{ route('orders.index') }}" @click="mobileAccountMenuOpen = false" class="flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 border-t border-gray-100">
+                                <span>طلباتي</span>
+                                <i class="fas fa-box text-gray-600"></i>
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}" class="border-t border-gray-100">
+                                @csrf
+                                <button type="submit" class="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">
+                                    <span>تسجيل الخروج</span>
+                                    <i class="fas fa-arrow-right-from-bracket"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @else
+                    <a href="{{ route('login') }}" class="flex flex-col items-center justify-center rounded-xl py-2 transition {{ request()->routeIs('login') ? 'text-primary-blue bg-primary-blue/10' : 'text-gray-600 hover:text-primary-blue' }}">
+                        <i class="fas fa-user text-xl mb-1"></i>
+                        <span class="text-[10px] font-medium">دخول</span>
+                    </a>
+                @endauth
             </div>
         </div>
         
@@ -857,5 +929,137 @@
 
     <!-- Cookie Consent Script -->
     <script src="{{ asset('js/cookie-consent.js') }}"></script>
+
+    <!-- Global Storefront Message -->
+    @php
+        $storefrontMessage = null;
+
+        if (session('status') === 'added_to_cart') {
+            $storefrontMessage = 'تمت إضافة المنتج إلى السلة بنجاح!';
+        } elseif (session('status') === 'removed_from_cart') {
+            $storefrontMessage = 'تم حذف المنتج من السلة.';
+        } elseif (session('status') === 'cart_cleared') {
+            $storefrontMessage = 'تم إفراغ السلة بنجاح!';
+        } elseif (session('status') === 'cart_updated') {
+            $storefrontMessage = 'تم تحديث السلة بنجاح!';
+        } else {
+            $storefrontMessage = session('success') ?? session('error') ?? session('status');
+        }
+
+        $storefrontMessageIsError = filled(session('error'));
+    @endphp
+
+    @if($storefrontMessage)
+        <div class="storefront-message-shell" aria-live="polite" aria-atomic="true">
+            <div x-data="{ show: true }"
+                 x-show="show"
+                 x-init="setTimeout(() => show = false, 4500)"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-2"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 -translate-y-2"
+                 class="storefront-message-card {{ $storefrontMessageIsError ? 'is-error' : 'is-success' }}">
+                <div class="storefront-message-icon">
+                    <i class="fas {{ $storefrontMessageIsError ? 'fa-circle-exclamation' : 'fa-circle-check' }}"></i>
+                </div>
+
+                <p class="storefront-message-text">{{ $storefrontMessage }}</p>
+
+                <button type="button" @click="show = false" class="storefront-message-close" aria-label="إغلاق الرسالة">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <style>
+            .storefront-message-shell {
+                position: fixed;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 9999;
+                width: min(calc(100vw - 24px), 560px);
+                pointer-events: none;
+                top: 142px;
+            }
+
+            .storefront-message-card {
+                pointer-events: auto;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                width: 100%;
+                padding: 14px 16px;
+                border-radius: 18px;
+                background: rgba(255, 255, 255, 0.97);
+                box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+                border: 1px solid rgba(226, 232, 240, 0.9);
+                backdrop-filter: blur(12px);
+            }
+
+            .storefront-message-card.is-success {
+                border-color: rgba(16, 185, 129, 0.22);
+            }
+
+            .storefront-message-card.is-error {
+                border-color: rgba(239, 68, 68, 0.22);
+            }
+
+            .storefront-message-icon {
+                flex-shrink: 0;
+                width: 38px;
+                height: 38px;
+                border-radius: 9999px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1rem;
+            }
+
+            .storefront-message-card.is-success .storefront-message-icon {
+                background: #dcfce7;
+                color: #059669;
+            }
+
+            .storefront-message-card.is-error .storefront-message-icon {
+                background: #fee2e2;
+                color: #dc2626;
+            }
+
+            .storefront-message-text {
+                flex: 1;
+                margin: 0;
+                color: #0f172a;
+                font-size: 0.95rem;
+                font-weight: 700;
+                line-height: 1.7;
+                text-align: center;
+            }
+
+            .storefront-message-close {
+                flex-shrink: 0;
+                width: 32px;
+                height: 32px;
+                border: 0;
+                border-radius: 9999px;
+                background: transparent;
+                color: #94a3b8;
+                cursor: pointer;
+                transition: background-color 0.2s ease, color 0.2s ease;
+            }
+
+            .storefront-message-close:hover {
+                background: rgba(15, 23, 42, 0.06);
+                color: #334155;
+            }
+
+            @media (min-width: 1024px) {
+                .storefront-message-shell {
+                    top: 112px;
+                }
+            }
+        </style>
+    @endif
 </body>
 </html>

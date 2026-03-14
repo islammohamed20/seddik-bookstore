@@ -15,8 +15,16 @@ class UserController extends Controller
     {
         $query = User::with('roles');
 
-        if ($request->routeIs('admin.customers.*') && ! $request->filled('role')) {
+        // Check if we are in the customers section
+        $isCustomerRoute = $request->routeIs('admin.customers.*') || $request->is('admin/customers*');
+
+        if ($isCustomerRoute) {
             $query->role('customer');
+        } else {
+            // In the users section, exclude customers
+            $query->whereDoesntHave('roles', function ($q) {
+                $q->where('name', 'customer');
+            });
         }
 
         if ($request->filled('search')) {
@@ -37,7 +45,11 @@ class UserController extends Controller
         }
 
         $users = $query->latest()->paginate(15)->withQueryString();
-        $roles = Role::all();
+        $roles = Role::where('name', '!=', 'customer')->get();
+
+        if ($isCustomerRoute) {
+            return view('admin.customers.index', compact('users', 'roles'));
+        }
 
         return view('admin.users.index', compact('users', 'roles'));
     }

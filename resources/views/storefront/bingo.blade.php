@@ -160,13 +160,21 @@
                            class="w-11 h-11 bg-white rounded-full flex items-center justify-center text-primary-blue hover:bg-primary-blue hover:text-white transition transform scale-75 group-hover:scale-100">
                             <i class="fas fa-eye"></i>
                         </a>
-                        <form action="{{ route('cart.store', $product) }}" method="POST">
-                            @csrf
-                            <button type="submit"
-                                    class="w-11 h-11 bg-white rounded-full flex items-center justify-center text-primary-red hover:bg-primary-red hover:text-white transition transform scale-75 group-hover:scale-100">
-                                <i class="fas fa-shopping-cart"></i>
-                            </button>
-                        </form>
+                        @if($product->product_type === 'variable')
+                            <a href="{{ route('products.show', $product) }}"
+                               class="w-11 h-11 bg-white rounded-full flex items-center justify-center text-amber-600 hover:bg-amber-500 hover:text-white transition transform scale-75 group-hover:scale-100"
+                               title="اختيار من متعدد">
+                                <i class="fas fa-list-check"></i>
+                            </a>
+                        @else
+                            <form action="{{ route('cart.store', $product) }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                        class="w-11 h-11 bg-white rounded-full flex items-center justify-center text-primary-red hover:bg-primary-red hover:text-white transition transform scale-75 group-hover:scale-100">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </button>
+                            </form>
+                        @endif
                         <button type="button"
                                 class="w-11 h-11 bg-white rounded-full flex items-center justify-center text-pink-500 hover:bg-pink-500 hover:text-white transition transform scale-75 group-hover:scale-100">
                             <i class="fas fa-heart"></i>
@@ -198,13 +206,21 @@
                             <span class="text-lg font-bold text-primary-blue">{{ number_format($product->price, 2) }} ج.م</span>
                             @endif
                         </div>
-                        <form action="{{ route('cart.store', $product) }}" method="POST">
-                            @csrf
-                            <button type="submit"
-                                    class="w-10 h-10 bg-primary-yellow hover:bg-yellow-400 rounded-full flex items-center justify-center transition transform hover:scale-110 shadow-lg">
-                                <i class="fas fa-plus text-primary-blue"></i>
-                            </button>
-                        </form>
+                        @if($product->product_type === 'variable')
+                            <a href="{{ route('products.show', $product) }}"
+                               class="inline-flex w-auto px-3 h-10 bg-amber-500 hover:bg-amber-600 rounded-lg items-center justify-center transition transform hover:scale-105 shadow-lg text-white text-xs font-bold"
+                               title="اختيار من متعدد">
+                                اختيار من متعدد
+                            </a>
+                        @else
+                            <form action="{{ route('cart.store', $product) }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                        class="w-10 h-10 bg-primary-yellow hover:bg-yellow-400 rounded-full flex items-center justify-center transition transform hover:scale-110 shadow-lg">
+                                    <i class="fas fa-plus text-primary-blue"></i>
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
             </div>

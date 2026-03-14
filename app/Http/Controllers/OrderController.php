@@ -7,6 +7,18 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
+    public function index(Request $request)
+    {
+        $orders = Order::query()
+            ->where('user_id', $request->user()->id)
+            ->latest()
+            ->paginate(12);
+
+        return view('storefront.orders.index', [
+            'orders' => $orders,
+        ]);
+    }
+
     public function show(Request $request, Order $order)
     {
         // التحقق من أن الطلب ينتمي للمستخدم الحالي أو تم إنشاؤه في نفس الجلسة
@@ -21,6 +33,26 @@ class OrderController extends Controller
         return view('storefront.orders.show', [
             'order' => $order,
         ]);
+    }
+
+    public function cancel(Request $request, Order $order)
+    {
+        if (! $this->canViewOrder($request, $order)) {
+            abort(404);
+        }
+
+        if (! $order->is_cancellable) {
+            return back()->with('error', 'لا يمكن إلغاء هذا الطلب في حالته الحالية.');
+        }
+
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $reason = $validated['reason'] ?? 'تم الإلغاء بواسطة العميل';
+        $order->cancel($reason);
+
+        return back()->with('success', 'تم إلغاء الطلب بنجاح.');
     }
 
     /**

@@ -17,6 +17,26 @@
             </p>
         </div>
 
+        <div class="max-w-5xl mx-auto mb-6">
+            <div class="bg-white shadow-sm rounded-2xl p-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="text-sm font-semibold text-gray-700">قائمة حسابي</span>
+                    <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-blue text-white text-sm font-medium hover:bg-blue-700 transition">
+                        <i class="fas fa-gauge-high"></i>
+                        <span>لوحة العميل</span>
+                    </a>
+                    <a href="{{ route('profile.edit') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition">
+                        <i class="fas fa-user"></i>
+                        <span>الملف الشخصي</span>
+                    </a>
+                    <a href="{{ route('orders.index') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition">
+                        <i class="fas fa-box"></i>
+                        <span>طلباتي</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <div class="max-w-5xl mx-auto grid gap-6 lg:grid-cols-3">
             <div class="lg:col-span-2 space-y-6">
                 <div class="bg-white shadow-sm rounded-2xl p-6">

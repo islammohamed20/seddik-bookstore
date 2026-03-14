@@ -34,6 +34,8 @@
                         تم تحديث السلة بنجاح!
                     @elseif(session('status') === 'removed_from_cart')
                         تم حذف المنتج من السلة.
+                    @elseif(session('status') === 'cart_cleared')
+                        تم إفراغ السلة بنجاح!
                     @endif
                 </span>
             </div>
@@ -104,7 +106,7 @@
                                 </div>
                                 
                                 <!-- Remove Button -->
-                                <form method="post" action="{{ route('cart.destroy', ['product' => $item['product_id']]) }}">
+                                <form method="post" action="{{ route('cart.destroy', ['product' => $item['slug']]) }}">
                                     @csrf
                                     @method('delete')
                                     @if(!empty($item['variant_id']))
@@ -120,7 +122,7 @@
 
                             <div class="flex flex-wrap items-end justify-between gap-4 mt-4">
                                 <!-- Quantity -->
-                                <form method="post" action="{{ route('cart.update', ['product' => $item['product_id']]) }}" 
+                                <form method="post" action="{{ route('cart.update', ['product' => $item['slug']]) }}" 
                                       class="flex items-center gap-2" x-data="{ qty: {{ (int) $item['quantity'] }} }">
                                     @csrf
                                     @method('patch')

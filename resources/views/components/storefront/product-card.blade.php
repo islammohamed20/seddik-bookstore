@@ -2,6 +2,7 @@
 
 @php
     $p = $product;
+    $isVariable = $p->product_type === 'variable';
     $isOnSale = $p->sale_price && $p->sale_price < $p->price;
     $discountPercent = $isOnSale ? (int) round((($p->price - $p->sale_price) / $p->price) * 100) : 0;
     $activeBadge = $badge ?: ($isOnSale ? ('خصم ' . $discountPercent . '%') : ($p->created_at?->gt(now()->subDays(20)) ? 'جديد' : null));
@@ -110,15 +111,24 @@
         </div>
 
         @if($p->is_available)
-            <form action="{{ route('cart.store', $p) }}" method="POST">
-                @csrf
-                <button type="submit"
-                        class="w-full h-9 rounded-xl bg-primary-blue text-white text-xs font-bold tracking-wide hover:bg-primary-blue/90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-1.5"
-                        title="أضف للسلة">
-                    <i class="fas fa-shopping-cart text-[12px]"></i>
-                    إضافة للسلة
-                </button>
-            </form>
+            @if($isVariable)
+                <a href="{{ route('products.show', $p) }}"
+                   class="w-full h-9 rounded-xl bg-amber-500 text-white text-xs font-bold tracking-wide hover:bg-amber-600 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-1.5"
+                   title="اختيار من متعدد">
+                    <i class="fas fa-list-check text-[12px]"></i>
+                    اختيار من متعدد
+                </a>
+            @else
+                <form action="{{ route('cart.store', $p) }}" method="POST">
+                    @csrf
+                    <button type="submit"
+                            class="w-full h-9 rounded-xl bg-primary-blue text-white text-xs font-bold tracking-wide hover:bg-primary-blue/90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-1.5"
+                            title="أضف للسلة">
+                        <i class="fas fa-shopping-cart text-[12px]"></i>
+                        إضافة للسلة
+                    </button>
+                </form>
+            @endif
         @else
             <div class="w-full h-9 rounded-xl bg-slate-100 text-slate-500 text-xs font-semibold flex items-center justify-center">
                 غير متوفر حالياً

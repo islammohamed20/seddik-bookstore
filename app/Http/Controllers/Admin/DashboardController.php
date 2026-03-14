@@ -19,7 +19,10 @@ class DashboardController extends Controller
             'active_products' => Product::active()->count(),
             'total_orders' => Order::count(),
             'pending_orders' => Order::pending()->count(),
-            'total_users' => User::count(),
+            'total_users' => User::whereDoesntHave('roles', function ($q) {
+                $q->where('name', 'customer');
+            })->count(),
+            'total_customers' => User::role('customer')->count(),
             'total_categories' => Category::count(),
             'unread_messages' => ContactMessage::unread()->count(),
         ];
